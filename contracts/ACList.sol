@@ -13,8 +13,8 @@ contract AccessControlList is IACList, Utilities {
 
     // USERS FUNCTIONS
     // Check whether the user has the permission or not
-    function checkPermission(string calldata _ebsiDID, string calldata _resourceID, bytes32 _permission) external virtual view override returns (bool) {
-        Role storage _userRole = userResourceToRoleData[string.concat(_ebsiDID, _resourceID)];
+    function checkPermission(bytes32 _ebsiDID, bytes32 _resourceID, bytes32 _permission) external virtual view override returns (bool) {
+        Role storage _userRole = userResourceToRoleData[createResourceToRoleHash(_ebsiDID, _resourceID)];
         bool hasPermission = false;
         if(_userRole.permissions.length > 0) {
             for(uint i = 0; i <= _userRole.permissions.length - 1; i++) {
@@ -27,8 +27,8 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Passing a name will create a new resource - passing name to keccak to have a uniqueID, the struct also have a blacklist
-    function createUser(string calldata ebsiDID, ResourcesRoles[] calldata resourcesRoles) external override returns (User memory user) {
-        string[] memory resourcesUIDs;
+    function createUser(bytes32 ebsiDID, ResourcesRoles[] calldata resourcesRoles) external override returns (User memory user) {
+        bytes32[] memory resourcesUIDs;
         for(uint i = 0; i < resourcesRoles.length; i++) {
             resourcesUIDs[resourcesUIDs.length] = resourcesRoles[i].resourceName;
         }
@@ -41,7 +41,7 @@ contract AccessControlList is IACList, Utilities {
         );
         usersArray.push(ebsiDID);
         for(uint i = 0; i < resourcesUIDs.length - 1; i++) {
-            userResourceToRoleData[string.concat(ebsiDID, resourcesUIDs[i])] = resourcesRoles[i].role;
+            userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourcesUIDs[i])] = resourcesRoles[i].role;
         }
 
         emit UserAdded(ebsiDID, block.timestamp, block.timestamp);
@@ -49,10 +49,11 @@ contract AccessControlList is IACList, Utilities {
     }
     
     // Remove user from the blockchain (from now on using delete)
-    function removeUser(string calldata ebsiDID, string calldata resourceUID) external override returns (bool) {
+    function removeUser(bytes32 ebsiDID) external override returns (bool) {
         int userIndex = -1;
         for(uint i = 0; i < usersArray.length - 1; i++) {
-            if(compareStrings(usersArray[i], ebsiDID)) {
+            // if(comparebytes32s(usersArray[i], ebsiDID)) {
+            if(usersArray[i] == ebsiDID) {
                 userIndex = int256(i);
             }
         }
@@ -68,20 +69,22 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Get a single user by his ebsiDID
-    function getUser(string calldata ebsiDID) external override view returns (User memory user) {
+    function getUser(bytes32 ebsiDID) external override view returns (User memory user) {
         for(uint i = 0; i < usersArray.length - 1; i++) {
-            if(compareStrings(usersArray[i], ebsiDID)) {
+            // if(comparebytes32s(usersArray[i], ebsiDID)) {
+            if(ebsiDID == usersArray[i]) {
                 return users[ebsiDID];
             }
         }
-        emit UserNotFound("User has not been found");
+
         return users[ebsiDID];
     }
 
     // Check if user has already been created, using an ebsiDID and cycling through the entire list of created users (only ebsiDID must be stored)
-    function isUserAlreadyCreated(string calldata ebsiDID) external override pure returns (bool) {
+    function isUserAlreadyCreated(bytes32 ebsiDID) external override view returns (bool) {
         for(uint i = 0; i < usersArray.length - 1; i++) {
-            if(compareStrings(usersArray[i], ebsiDID)) {
+            // if(comparebytes32s(usersArray[i], ebsiDID)) {
+            if(usersArray[i] == ebsiDID) {
                 return true;
             }
         }
@@ -89,13 +92,13 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Get all Roles of a user
-    function getAllUserRoles(string calldata ebsiDID) external override view returns (ResourcesRoles[] memory) {
-        string[] memory resourcesUIDs = users[ebsiDID].resourcesUIDs;
+    function getAllUserRoles(bytes32 ebsiDID) external override view returns (ResourcesRoles[] memory) {
+        bytes32[] memory resourcesUIDs = users[ebsiDID].resourcesUIDs;
         ResourcesRoles[] memory resourcesRoles = new ResourcesRoles[](resourcesUIDs.length);
 
         for(uint i = 0; i < resourcesUIDs.length - 1; i++) {
             resourcesRoles[i] = ResourcesRoles({
-                role: userResourceToRoleData[string.concat(ebsiDID, resourcesUIDs[i])],
+                role: userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourcesUIDs[i])],
                 resourceName: resourceIDToResourceData[resourcesUIDs[i]].name
             });
         }
@@ -112,9 +115,10 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Check if a user is already in blacklist
-    function isUserAlreadyInBlacklist(string calldata ebsiDID, string[] memory list) internal pure returns (bool) {
+    function isUserAlreadyInBlacklist(bytes32 ebsiDID, bytes32[] memory list) internal pure returns (bool) {
         for(uint i = 0; i < list.length - 1; i++) {
-            if(compareStrings(ebsiDID, list[i])) {
+            // if(comparebytes32s(ebsiDID, list[i])) {
+            if(ebsiDID == list[i]) {
                 return true;
             }
         }
@@ -123,23 +127,24 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Add a user to a resource's blacklist
-    function addUserToBlackList(string calldata requester, string calldata ebsiDID, string calldata resourceUID) external override {
+    function addUserToBlackList(bytes32 requester, bytes32 ebsiDID, bytes32 resourceUID) external override {
         require(this.checkPermission(requester, resourceUID, Data.edit), "User does not have enough permission to do this action.");
         Resource storage  resource = resourceIDToResourceData[resourceUID];
         require(isUserAlreadyInBlacklist(ebsiDID, resource.blacklist), "User is already in blacklist");
         resource.blacklist.push(ebsiDID);
-        string memory resourceName = resource.name;
+        bytes32 resourceName = resource.name;
 
         emit ResourceUpdated(block.timestamp, resourceName, ebsiDID, true);
     }
 
     // Remove a user from a resource's blacklist
-    function removeUserFromBlacklist(string calldata requester, string calldata ebsiDID, string calldata resourceUID) external override {
+    function removeUserFromBlacklist(bytes32 requester, bytes32 ebsiDID, bytes32 resourceUID) external override {
         require(this.checkPermission(requester, resourceUID, Data.edit), "User does not have enough permission to do this action.");
         int userIndex = -1;
-        string[] storage blacklist = resourceIDToResourceData[resourceUID].blacklist;
+        bytes32[] storage blacklist = resourceIDToResourceData[resourceUID].blacklist;
         for(uint i = 0; i < blacklist.length - 1; i++) {
-            if(compareStrings(blacklist[i], ebsiDID)) {
+            // if(comparebytes32s(blacklist[i], ebsiDID)) {
+            if(blacklist[i] == ebsiDID) {
                 userIndex = int256(i);
             }
         }
@@ -148,15 +153,15 @@ contract AccessControlList is IACList, Utilities {
             blacklist[i] = blacklist[i + 1];
         }
         blacklist.pop();
-        string memory resourceName = resourceIDToResourceData[resourceUID].name;
+        bytes32 resourceName = resourceIDToResourceData[resourceUID].name;
         emit ResourceUpdated(block.timestamp, resourceName, ebsiDID, false);
     }
 
     // Get all users in a resource's blacklist
-    function getAllUsersInBlacklist(string calldata requester, string calldata resourceUID) external override returns (string[] memory users) {
+    function getAllUsersInBlacklist(bytes32 requester, bytes32 resourceUID) external view override returns (bytes32[] memory users) {
         require(this.checkPermission(requester, resourceUID, Data.read), "User does not have enough permission to do this action.");
-        string[] memory tempUsers;
-        string[] memory blacklistedUsers = resourceIDToResourceData[resourceUID].blacklist;
+        bytes32[] memory tempUsers;
+        bytes32[] memory blacklistedUsers = resourceIDToResourceData[resourceUID].blacklist;
         for(uint i = 0; i < blacklistedUsers.length - 1; i++) {
             tempUsers[i] = blacklistedUsers[i];
         }
@@ -164,10 +169,10 @@ contract AccessControlList is IACList, Utilities {
         return tempUsers;
     }
 
-    function addResourcesToUser(string calldata ebsiDID, string[] calldata resourcesUIDs) external override {
-        string[] memory resourcesNames;
-        string[] memory removedResource = new string[](0);
-        string[] memory resourcesWithProblems = new string[](0);
+    function addResourcesToUser(bytes32 ebsiDID, bytes32[] calldata resourcesUIDs) external override {
+        bytes32[] memory resourcesNames;
+        bytes32[] memory removedResource = new bytes32[](0);
+        bytes32[] memory resourcesWithProblems = new bytes32[](0);
         for(uint i = 0; i < resourcesUIDs.length - 1; i++) {
             // trova le risorse
             users[ebsiDID].resourcesUIDs.push(resourcesUIDs[i]);
@@ -176,15 +181,16 @@ contract AccessControlList is IACList, Utilities {
         emit UserUpdated(block.timestamp, ebsiDID, resourcesNames,  removedResource, resourcesWithProblems);
     }
 
-    function removeResourcesFromUser(string calldata ebsiDID, string[] calldata resourcesUIDs) external override {
-        string[] memory resourcesWithProblems;
-        string[] memory userResourcesUIDs = users[ebsiDID].resourcesUIDs;
-        string[] memory removedResources;
+    function removeResourcesFromUser(bytes32 ebsiDID, bytes32[] calldata resourcesUIDs) external override {
+        bytes32[] memory resourcesWithProblems;
+        bytes32[] memory userResourcesUIDs = users[ebsiDID].resourcesUIDs;
+        bytes32[] memory removedResources;
         for(uint i = 0; i < resourcesUIDs.length - 1; i++) {
             int resourceIndex = -1;
-            string memory resourceName = resourceIDToResourceData[resourcesUIDs[i]].name;
+            bytes32 resourceName = resourceIDToResourceData[resourcesUIDs[i]].name;
             for(uint j = 0; j < userResourcesUIDs.length - 1; j++) {
-                if(compareStrings(userResourcesUIDs[j], resourcesUIDs[i])) {
+                // if(comparebytes32s(userResourcesUIDs[j], resourcesUIDs[i])) {
+                if((userResourcesUIDs[j] == resourcesUIDs[i])) {
                     resourceIndex = int256(j);
                 }
             }
@@ -193,36 +199,39 @@ contract AccessControlList is IACList, Utilities {
                     userResourcesUIDs[j] = userResourcesUIDs[j + 1];
                 }
                 users[ebsiDID].resourcesUIDs.pop();
-                delete userResourceToRoleData[string.concat(ebsiDID, resourcesUIDs[i])];
+                delete userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourcesUIDs[i])];
                 removedResources[removedResources.length] = resourceName;
             } else {
                 resourcesWithProblems[resourcesWithProblems.length] = resourceName;
             }
         }
 
-        emit UserUpdated(block.timestamp, ebsiDID, new string[](0), removedResources, resourcesWithProblems);
+        emit UserUpdated(block.timestamp, ebsiDID, new bytes32[](0), removedResources, resourcesWithProblems);
     }
 
 
     // RESOURCES FUNCTIONS
     // Create a resource passing a name
-    function createResource(string calldata requester, string calldata name) external override returns (string memory resourceUID) {
-        string memory resourceUIDToCreate = createStringHash(name);
+    function createResource(bytes32 requester, bytes32 name) external override returns (bytes32 resourceUID) {
+        // bytes32 memory resourceUIDToCreate = createbytes32Hash(name);
+        bytes32 resourceUIDToCreate = createHash(name);
         users[requester].resourcesUIDs.push(resourceUIDToCreate);
-        userResourceToRoleData[string.concat(requester, resourceUIDToCreate)] = roles["admin"];
+        userResourceToRoleData[createResourceToRoleHash(requester, resourceUIDToCreate)] = roles["admin"];
 
-        emit UserUpdated(block.timestamp, requester, new string[](0), new string[](0), new string[](0));
+        emit UserUpdated(block.timestamp, requester, new bytes32[](0), new bytes32[](0), new bytes32[](0));
         emit ResourceUpdated(block.timestamp, name, requester, false);
         return resourceUIDToCreate;
     }
 
-    function deleteResource(string calldata resourceHash) external virtual override returns (bool) {
+    function deleteResource(bytes32 resourceHash) external virtual override returns (bool isJobDone) {
         // Deleting a resource from a user resourceUIDs array is not doable because of max gas consumption when users are a relevant number
         // This can reach the max because it should cycle through entire usersArray and then cycle through entire resourceUIDs array for each user
         // This lead to remove the resourceUID from the user
         int resourceIndex = -1;
+        isJobDone = false;
         for(uint i = 0; i < createdResourcesArray.length; i++) {
-            if(compareStrings(resourceHash, createdResourcesArray[i])) {
+            // if(comparebytes32s(resourceHash, createdResourcesArray[i])) {
+            if((resourceHash == createdResourcesArray[i])) {
                 resourceIndex = int(i);
             }
         }
@@ -235,7 +244,8 @@ contract AccessControlList is IACList, Utilities {
         for(uint i = 0; i < usersArray.length; i++) {
             int resourceInCurrentUserIndex = -1;
             for(uint j = 0; j < users[usersArray[i]].resourcesUIDs.length; j++) {
-                if(compareStrings(resourceHash, users[usersArray[i]].resourcesUIDs[j])) {
+                // if(comparebytes32s(resourceHash, users[usersArray[i]].resourcesUIDs[j])) {
+                if((resourceHash == users[usersArray[i]].resourcesUIDs[j])) {
                     resourceInCurrentUserIndex = int(j);
                 }
             }
@@ -246,14 +256,19 @@ contract AccessControlList is IACList, Utilities {
                 users[usersArray[i]].resourcesUIDs.pop();
             }
         }
+        isJobDone = true;
         delete resourceIDToResourceData[resourceHash];
+
+        return isJobDone;
     }
 
     // Check if a resource has already been created and if so it will return that resource
-    function isResourceAlreadyCreated(string calldata name) external override pure returns (bool) {
-        string memory resourceUIDToCreate = createStringHash(name);
+    function isResourceAlreadyCreated(bytes32 name) external override view returns (bool) {
+        // bytes32 memory resourceUIDToCreate = createbytes32Hash(name);
+        bytes32 resourceUIDToCreate = createHash(name);
         for(uint i = 0; i < createdResourcesArray.length - 1; i++) {
-            if(compareStrings(createdResourcesArray[i], resourceUIDToCreate)) {
+            // if(comparebytes32s(createdResourcesArray[i], resourceUIDToCreate)) {
+                if((createdResourcesArray[i] == resourceUIDToCreate)) {
                 return true;
             }
         }
@@ -269,8 +284,8 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Get all user resources
-    function getAllUserResources(string calldata ebsiDID) external override view returns(Resource[] memory tempResources) {
-        string[] memory resourcesUIDs = users[ebsiDID].resourcesUIDs;
+    function getAllUserResources(bytes32 ebsiDID) external override view returns(Resource[] memory tempResources) {
+        bytes32[] memory resourcesUIDs = users[ebsiDID].resourcesUIDs;
         for(uint i = 0; i < resourcesUIDs.length - 1; i++) {
             tempResources[tempResources.length] = resourceIDToResourceData[resourcesUIDs[i]];
         }
@@ -280,13 +295,14 @@ contract AccessControlList is IACList, Utilities {
 
     // ROLES FUNCTIONS
     // Only callable from who has grant permission - It shows before which role user have and ask for permission before submitting this request
-    function assignRole(string calldata requester, string calldata ebsiDID, string calldata resourceUID, Role calldata role) external override {
+    function assignRole(bytes32 requester, bytes32 ebsiDID, bytes32 resourceUID, Role calldata role) external override {
         require(this.checkPermission(requester, resourceUID, Data.grant), "User does not have enough permissions to do this action.");
 
         User memory user = users[ebsiDID];
         int resourceIndex = -1;
         for(uint i = 0; i < user.resourcesUIDs.length - 1; i++) {
-            if(compareStrings(resourceUID, user.resourcesUIDs[i])) {
+            // if(comparebytes32s(resourceUID, user.resourcesUIDs[i])) {
+            if(resourceUID == user.resourcesUIDs[i]) {
                 resourceIndex = int256(i);
             }
         }
@@ -296,16 +312,17 @@ contract AccessControlList is IACList, Utilities {
         }
 
         // Not finding a way to limit a bug where an user can revoke a role to a resource by simply assigning a role with less permissions
-        userResourceToRoleData[string.concat(ebsiDID, resourceUID)] = role;
+        userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourceUID)] = role;
     }
 
     // Only callable from who has revoke permissions
-    function revokeRole(string calldata requester, string calldata ebsiDID, string calldata resourceUID) external override {
+    function revokeRole(bytes32 requester, bytes32 ebsiDID, bytes32 resourceUID) external override {
         require(this.checkPermission(requester, resourceUID, Data.revoke), "User does not have enough permissions to do this action.");
         User memory user = users[ebsiDID];
         int resourceIndex = -1;
         for(uint i = 0; i < user.resourcesUIDs.length - 1; i++) {
-            if(compareStrings(resourceUID, user.resourcesUIDs[i])) {
+            // if(comparebytes32s(resourceUID, user.resourcesUIDs[i])) {
+            if(resourceUID == user.resourcesUIDs[i]) {
                 resourceIndex = int256(i);
             }
         }
@@ -316,7 +333,7 @@ contract AccessControlList is IACList, Utilities {
             users[ebsiDID].resourcesUIDs.pop();
         }
         // Need to use this instead of the variable because here it's needed to assign the new value to the storage variable
-        delete userResourceToRoleData[string.concat(ebsiDID, resourceUID)];
+        delete userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourceUID)];
     }
 
     // Create a custom role with permissions (usefull if admin has created custom permissions or else)
@@ -329,10 +346,11 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Delete a custom role
-    function deleteCustomRole(string calldata roleName) external override {
+    function deleteCustomRole(bytes32 roleID) external override {
         int resourceIndex = -1;
         for(uint i = 0; i < createdRolesArray.length; i++) {
-            if(compareStrings(roleName, createdRolesArray[i])) {
+            // if(comparebytes32s(roleName, createdRolesArray[i])) {
+            if(roleID == createdRolesArray[i]) {
                 resourceIndex = int256(i);
             }
         }
@@ -340,7 +358,7 @@ contract AccessControlList is IACList, Utilities {
             createdRolesArray[i] = createdRolesArray[i + 1];
         }
         createdRolesArray.pop();
-        delete roles[roleName];
+        delete roles[roleID];
     }
 
     // Get all roles available created by the admins
@@ -353,9 +371,10 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Check whether the role has been already created
-    function isRoleAlreadyCreated(string calldata roleName) external override pure returns (bool) {
+    function isRoleAlreadyCreated(bytes32 roleName) external override view returns (bool) {
         for(uint i = 0; i < createdRolesArray.length; i++) {
-            if(compareStrings(roleName, createdRolesArray[i])) {
+            // if(comparebytes32s(roleName, createdRolesArray[i])) {
+            if(roleName == createdRolesArray[i]) {
                 return true;
             }
         }
@@ -394,7 +413,7 @@ contract AccessControlList is IACList, Utilities {
     }
 
     // Check if a permission already exists
-    function isPermissionAlreadyCreated(bytes32 permissionName) external virtual pure override returns (bool) {
+    function isPermissionAlreadyCreated(bytes32 permissionName) external virtual view override returns (bool) {
         for(uint i = 0; i < createdPermissionsArray.length; i++) {
             if(permissionName == createdPermissionsArray[i]) {
                 return true;
