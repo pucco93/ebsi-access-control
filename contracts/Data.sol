@@ -13,47 +13,47 @@ contract Data {
 
     struct Role {
         bytes32[] permissions;
-        string name;
+        bytes32 name;
         bool isCustom;
     }
 
     struct Resource {
-        string name;
-        string UID;
-        string[] blacklist;
+        bytes32 name;
+        bytes32 UID;
+        bytes32[] blacklist;
     }
 
     struct User {
-        string ebsiDID;
-        string[] resourcesUIDs; // this is composed by resource IDs
+        bytes32 ebsiDID;
+        bytes32[] resourcesUIDs; // this is composed by resource IDs
         uint256 createdTime;
         uint256 lastUpdate;
         uint256 lastAccess;
     }
 
     struct ResourcesRoles {
-        string resourceName;
+        bytes32 resourceName;
         Role role;
     }
 
     // Each user has its own mapping
-    mapping(string => User) users;
+    mapping(bytes32 => User) users;
     // Default roles and custom ones
-    mapping(string => Role) roles;
+    mapping(bytes32 => Role) roles;
     // For each couple of user-resource the mapping will return a role which define what the user can do to that resource
-    mapping(string => Role) userResourceToRoleData;
+    mapping(bytes32 => Role) userResourceToRoleData;
     // Mapping to retrieve a resource mapped into a resourceID
-    mapping(string => Resource) resourceIDToResourceData;
+    mapping(bytes32 => Resource) resourceIDToResourceData;
     // Mapping to retrieve a permission mapped into a permissionID
     mapping(bytes32 => PermissionStruct) permissionIDToPermissionData;
 
     // Lists of data
     // Array to store all the users - it has the ebsiDID inside of it
-    string[] usersArray;
+    bytes32[] usersArray;
     // Array to store all the created roles
-    string[] createdRolesArray;
+    bytes32[] createdRolesArray;
     // Array to store all the created resources
-    string[] createdResourcesArray;
+    bytes32[] createdResourcesArray;
     // Array to store all the created permissions
     bytes32[] createdPermissionsArray;
 
@@ -68,32 +68,28 @@ contract Data {
     // Events
     event ResourceUpdated(
         uint lastUpdate,
-        string resourceUpdated,
-        string listedUser,
+        bytes32 resourceUpdated,
+        bytes32 listedUser,
         bool isBlacklisted
     );
 
     event UserAdded(
-        string ebsiDID,
+        bytes32 ebsiDID,
         uint createdTime,
         uint lastAccess
     );
 
     event UserRemoved(
-        string ebsiDID,
+        bytes32 ebsiDID,
         uint deletionTime
-    );
-
-    event UserNotFound(
-        string advice
     );
 
     event UserUpdated(
         uint lastUpdate,
-        string ebsiDID,
-        string[] addedResources,
-        string[] removedResources,
-        string[] resourcesWithProblems
+        bytes32 ebsiDID,
+        bytes32[] addedResources,
+        bytes32[] removedResources,
+        bytes32[] resourcesWithProblems
     );
 
     function createPermissionHash(bytes32 permissionToHash) public pure returns (bytes32) {
@@ -139,7 +135,7 @@ contract Data {
         createdPermissionsArray.push(permissionIDToPermissionData[revoke].permission);
 
         // Default roles - can be added using createCustomRole
-        createdRolesArray = ['user', 'editor', 'manager', 'admin'];
+        createdRolesArray = [bytes32('user'), 'editor', 'manager', 'admin'];
         roles['user'] = Role({ permissions: new bytes32[](1), name: 'user', isCustom: false });
         roles['editor'] = Role({ permissions: new bytes32[](4), name: 'editor', isCustom: false });
         roles['manager'] = Role({ permissions: new bytes32[](5), name: 'manager', isCustom: false });

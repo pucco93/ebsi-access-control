@@ -25,6 +25,14 @@ abstract contract Utilities is IACList {
         return bytes32ToString(keccak256(abi.encodePacked(toHashString)));
     }
 
+    function createHash(bytes32 toHash) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(toHash));
+    }
+
+    function createResourceToRoleHash(bytes32 resourceUID, bytes32 ebsiDID) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(resourceUID, ebsiDID));
+    }
+
     function compareStrings(string memory string1, string memory string2) internal pure returns (bool) {
         return keccak256(abi.encodePacked(string1)) == keccak256(abi.encodePacked(string2));
     }
