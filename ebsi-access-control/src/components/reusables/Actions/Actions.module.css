@@ -1,0 +1,10 @@
+.actionsRow {
+  margin: 0px 0px 30px 0px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.searchField {
+  width: 80%;
+  margin-right: 30px;
+}

@@ -1,0 +1,18 @@
+.header {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2fr 8fr 1fr;
+  grid-template-rows: 1fr;
+  column-gap: 10px;
+  margin-bottom: 10px;
+}
+
+.titleMainView {
+  text-transform: none!important;
+  padding: 10px 5px 10px 30px;
+}
+
+.currentViewTitle {
+  padding: 10px 5px;
+  align-self: center;
+}

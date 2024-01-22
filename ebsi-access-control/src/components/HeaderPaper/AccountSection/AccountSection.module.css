@@ -1,0 +1,44 @@
+.accountSection {
+  padding: 10px 5px;
+}
+
+.loginButton {
+  padding: 10px 20px!important;
+  border: 1px solid rgba(0, 0, 0, 0.20)!important;
+}
+
+.logoutButton {
+  padding: 10px 20px!important;
+  border: 1px solid rgba(0, 0, 0, 0.20)!important;
+  border-radius: 5px;
+}
+
+.logoutButtonOpened {
+  padding: 10px 20px!important;
+  border-color: rgba(0, 0, 0, 0.20)!important;
+  border-width: 1px 1px 0px 1px!important;
+  border-style: solid!important;
+  border-radius: 5px!important;
+}
+
+.slidingWindowOpened {
+  padding: 10px 0px;
+  max-height: 100;
+  opacity: 1;
+  overflow: hidden;
+  text-align: center;
+  font-size: 20px;
+  cursor: pointer;
+  border-color: rgba(0, 0, 0, 0.20);
+  border-width: 0px 1px 1px 1px;
+  border-style: solid;
+  border-radius: 5px;
+}
+
+.slidingWindow {
+  padding: 0px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  text-align: center;
+}

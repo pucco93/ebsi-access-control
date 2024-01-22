@@ -1,0 +1,14 @@
+.contentView {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.menuView {
+    height: 100%;
+}
+
+.currentView {
+    flex-grow: 1;
+    margin: 0px 0px 0px 50px;
+}

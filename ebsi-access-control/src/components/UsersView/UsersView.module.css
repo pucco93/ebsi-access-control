@@ -1,0 +1,40 @@
+.noUsersLabel {
+  text-align: center;
+  padding: 30px 0px;
+}
+
+.ebsiDIDCell {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chipsContainerCell {
+  width: 150px;
+  justify-content: end !important;
+}
+
+.modalTitle, .importantMessage, .addItem, .pemKeyFormatErrorAlert, .textInput {
+  margin-bottom: 20px!important;
+}
+.privateKeyContainer {
+  margin: 30px 0px;
+}
+
+.privateKeyInput {
+  width: 100% !important;
+}
+
+.copyPrivateKey {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: end;
+}
+
+.usePublicKeyControl, .selectResourceRoles {
+  flex-direction: row !important;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px !important;
+}
