@@ -38,3 +38,41 @@
   align-items: center;
   margin-bottom: 20px !important;
 }
+
+.userRow {
+  cursor: pointer;
+}
+
+.dialogTitle {
+  width: 500px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.removeItemsButton {
+  padding-top: 8px;
+  width: 100% !important;
+}
+
+.addButtonContainer {
+  margin-right: 2% !important;
+  margin-bottom: 20px !important;
+  width: 48%;
+}
+
+.removeButtonContainer {
+  margin-left: 2% !important;
+  margin-bottom: 20px !important;
+  width: 48%;
+}
+
+.textHelper {
+  width: 100%;
+  margin-bottom: 10px !important;
+}
+
+.resourceSelect {
+  margin-top: 10px !important;
+  margin-bottom: 10px !important;
+}

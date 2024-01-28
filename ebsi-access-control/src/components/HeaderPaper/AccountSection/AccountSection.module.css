@@ -8,12 +8,21 @@
 }
 
 .logoutButton {
+  /* max-width: 200px; */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 10px 20px!important;
   border: 1px solid rgba(0, 0, 0, 0.20)!important;
   border-radius: 5px;
 }
 
 .logoutButtonOpened {
+  /* max-width: 200px; */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
   padding: 10px 20px!important;
   border-color: rgba(0, 0, 0, 0.20)!important;
   border-width: 1px 1px 0px 1px!important;

@@ -65,10 +65,7 @@ const RoleCreationModal = (props: IUserCreationModalProps) => {
   };
 
   return (
-    <>
       <Dialog
-        aria-labelledby="transition-modal-title"
-        aria-describedby="transition-modal-description"
         open={isOpen}
         keepMounted
         closeAfterTransition
@@ -137,7 +134,6 @@ const RoleCreationModal = (props: IUserCreationModalProps) => {
           </form>
         </DialogContent>
       </Dialog>
-    </>
   );
 };
 

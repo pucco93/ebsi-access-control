@@ -10,7 +10,6 @@ import {
   FormControl,
   FormLabel,
   TextField,
-  Switch,
   FormGroup,
 } from "@mui/material";
 import styles from "./Resources.module.css";
@@ -50,6 +49,7 @@ const ResourceCreationModal = (props: IUserCreationModalProps) => {
       if (name && name.length <= 32) {
         setIsCreating(true);
         requestCreateResource(name, useCurrentUser, userToAdd);
+        triggerCloseModal();
       } else {
         updateErrorInForm(true);
       }
@@ -65,8 +65,6 @@ const ResourceCreationModal = (props: IUserCreationModalProps) => {
 
   return (
     <Dialog
-      aria-labelledby="transition-modal-title"
-      aria-describedby="transition-modal-description"
       open={isOpen}
       keepMounted
       closeAfterTransition
@@ -79,7 +77,7 @@ const ResourceCreationModal = (props: IUserCreationModalProps) => {
             <FormControl fullWidth>
               <FormLabel className={styles.resourceNameLabel}>Name*</FormLabel>
               <TextField
-                autoFocus={true}
+                autoFocus
                 error={errorInForm || nameLength > 32}
                 helperText={
                   errorInForm || nameLength > 32

@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+build
 dist-ssr
 *.local
 
@@ -23,3 +24,4 @@ dist-ssr
 *.sln
 *.sw?
 ec-secp256k1-priv-key.pem
+ec-secp256k1-pub-key.pem

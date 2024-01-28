@@ -38,10 +38,12 @@ export const LightHtmlTooltip = styled(({ className, ...props }: TooltipProps) =
 
 interface IUsersTableProps {
   setIsCreating: (newValue: boolean) => void;
+  openManageModal: () => void;
+  openUser: (user: User) => void;
 }
 
 const UsersTable = (props: IUsersTableProps) => {
-  const { setIsCreating } = props;
+  const { setIsCreating, openManageModal, openUser } = props;
   const users = useSelector(
     (state: { accessControlList: AccessControlListType }) => getUsers(state)
   );
@@ -73,6 +75,11 @@ const UsersTable = (props: IUsersTableProps) => {
     }
   };
 
+  const handleRowClick = (row: User) => {
+    openManageModal();
+    openUser(row);
+  };
+
   return (
     <>
       <TableContainer component={Paper}>
@@ -91,7 +98,10 @@ const UsersTable = (props: IUsersTableProps) => {
             {visibleUsers.map((user: User) => (
               <TableRow
                 key={user.ebsiDID}
+                className={styles.userRow}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                onClick={() => 
+                  handleRowClick(user)}
               >
                 <Tooltip title={user?.ebsiDID}>
                   <TableCell className={styles.ebsiDIDCell} align="right">
@@ -110,7 +120,7 @@ const UsersTable = (props: IUsersTableProps) => {
                   >
                     <Stack direction="row" spacing={1}>
                       {(user?.resources.length > 2 ? user?.resources.slice(0, 2) : user.resources)?.map((resource: string) => (
-                        <Chip label={resource}></Chip>
+                        <Chip key={resource} label={resource}></Chip>
                       ))}
                     </Stack>
                   </LightHtmlTooltip>

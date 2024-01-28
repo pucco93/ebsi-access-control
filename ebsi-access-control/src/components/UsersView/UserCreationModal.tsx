@@ -1,17 +1,15 @@
 import {
   Alert,
-  Backdrop,
-  Box,
   Button,
-  Fade,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   FormControl,
   FormGroup,
   FormLabel,
-  Modal,
   Switch,
   TextField,
   Tooltip,
-  Typography,
 } from "@mui/material";
 import styles from "./UsersView.module.css";
 import { useEffect, useState } from "react";
@@ -29,18 +27,30 @@ interface IUserCreationModalProps {
   setIsCreating: (newValue: boolean) => void;
 }
 
-const initialFormState = {
+type formStateType = {
+  name: string;
+  email: string;
+  publicKey: {};
+  resourceRoles: ResourceRole[];
+};
+
+const initialFormState: formStateType = {
   name: "",
   email: "",
   publicKey: {},
-  resourceRoles: [] as ResourceRole[],
+  resourceRoles: [],
 };
 
-const removeEmptyDataFromResourceRoles = (resourceRoles: ResourceRole[]) => {
-  return resourceRoles.filter(
-    ({ resourceName, role }) => resourceName && role?.name
-  );
-};
+const removeDuplicatesEmptyDataFromResourceRoles = (data: formStateType) => ({
+  ...data,
+  resourceRoles: [
+    ...new Map(
+      data?.resourceRoles
+        ?.filter(({ resourceName, role }) => resourceName && role?.name)
+        ?.map((item) => [item?.resourceName, item])
+    ).values(),
+  ],
+});
 
 const UserCreationModal = (props: IUserCreationModalProps) => {
   const { isOpen, isCreating, closeModal, setIsCreating } = props;
@@ -51,19 +61,6 @@ const UserCreationModal = (props: IUserCreationModalProps) => {
   const [formState, updateForm] = useState(initialFormState);
   const [selectResourceRoles, setSelectResourceRoles] =
     useState<boolean>(false);
-
-  const style = {
-    position: "absolute" as "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: 800,
-    bgcolor: "background.paper",
-    border: "2px solid #000",
-    borderRadius: 2,
-    boxShadow: 24,
-    p: 4,
-  };
 
   const validateUserPublicKey = (userPublicKey: string) => {
     if (userPublicKey.indexOf("-----BEGIN PUBLIC KEY-----") < 0) {
@@ -99,18 +96,18 @@ const UserCreationModal = (props: IUserCreationModalProps) => {
   const triggerCreateUser = async () => {
     if (!isCreating) {
       if (isPublicKeyFromUser) {
-        removeEmptyDataFromResourceRoles(formState?.resourceRoles);
+        const data = removeDuplicatesEmptyDataFromResourceRoles(formState);
         if (validateUserPublicKey(formState?.publicKey as string)) {
-          closeModal();
+          triggerCloseModal();
           setIsCreating(true);
-          await createUser(formState);
+          await createUser(data);
           setIsCreating(false);
         }
       } else {
-        removeEmptyDataFromResourceRoles(formState?.resourceRoles);
-        closeModal();
+        const data = removeDuplicatesEmptyDataFromResourceRoles(formState);
+        triggerCloseModal();
         setIsCreating(true);
-        await createUser(formState);
+        await createUser(data);
         setIsCreating(false);
       }
     }
@@ -127,7 +124,6 @@ const UserCreationModal = (props: IUserCreationModalProps) => {
     setSelectResourceRoles(false);
     setPrivateKey("");
     setIsPrivateKeySaved(false);
-    setIsCreating(false);
   };
 
   const triggerSelectResourceRoles = async () => {
@@ -149,136 +145,121 @@ const UserCreationModal = (props: IUserCreationModalProps) => {
   }, [isOpen]);
 
   return (
-    <Modal
-      aria-labelledby="transition-modal-title"
-      aria-describedby="transition-modal-description"
+    <Dialog
       open={isOpen}
-      onClose={triggerCloseModal}
+      keepMounted
       closeAfterTransition
-      slots={{ backdrop: Backdrop }}
-      slotProps={{
-        backdrop: {
-          timeout: 500,
-        },
-      }}
+      onClose={triggerCloseModal}
     >
-      <Fade in={isOpen}>
-        <Box sx={style}>
-          <Typography
-            className={styles.modalTitle}
-            variant="h5"
-            textAlign={"center"}
-          >
-            New user
-          </Typography>
-          <form>
-            <FormGroup>
-              <FormControl fullWidth>
-                <FormLabel>Name</FormLabel>
-                <TextField
-                  onChange={(event) =>
-                    triggerUpdateForm(event?.target?.value, "name")
-                  }
-                  className={styles.textInput}
-                  variant="outlined"
-                />
-              </FormControl>
-
-              <FormControl fullWidth>
-                <FormLabel>Email</FormLabel>
-                <TextField
-                  onChange={(event) =>
-                    triggerUpdateForm(event?.target?.value, "email")
-                  }
-                  className={styles.textInput}
-                  variant="outlined"
-                />
-              </FormControl>
-
-              <FormControl
-                className={styles.usePublicKeyControl}
-                onClick={triggerUsePersonalPublicKey}
-                fullWidth
-              >
-                <FormLabel>Do you want to use your Public Key?</FormLabel>
-                <Switch checked={isPublicKeyFromUser} />
-              </FormControl>
-
-              {isPublicKeyFromUser && (
-                <FormControl fullWidth>
-                  <FormLabel>Public key</FormLabel>
-                  <TextField
-                    multiline
-                    rows={4}
-                    onChange={(event) =>
-                      triggerUpdateForm(event?.target?.value, "publicKey")
-                    }
-                    className={styles.textInput}
-                    variant="outlined"
-                  />
-                </FormControl>
-              )}
-              {typeof formState?.publicKey === "string" &&
-                !validateUserPublicKey(formState?.publicKey) && (
-                  <Alert
-                    className={styles.pemKeyFormatErrorAlert}
-                    severity="error"
-                  >
-                    Public key is not correctly formatted or missing (Provide it
-                    in PEM format).
-                  </Alert>
-                )}
-
-              {!isPublicKeyFromUser && (
-                <>
-                  <Button
-                    disabled={isPrivateKeySaved}
-                    variant="outlined"
-                    onClick={triggerCreateKeyPair}
-                  >
-                    {isPrivateKeySaved
-                      ? "Private key copied!"
-                      : "Create keys pair"}
-                  </Button>
-
-                  <ShowPrivateKeyToSave
-                    handleClose={() => setIsPrivateKeySaved(true)}
-                    privateKey={privateKey}
-                  />
-                </>
-              )}
-
-              <FormControl
-                className={styles.selectResourceRoles}
-                onClick={triggerSelectResourceRoles}
-                fullWidth
-              >
-                <FormLabel>
-                  Do you want to add resources and relative roles?
-                </FormLabel>
-                <Switch checked={selectResourceRoles} />
-              </FormControl>
-
-              <ResourceRoleSelector
-                blocks={formState?.resourceRoles}
-                selectResourceRoles={selectResourceRoles}
-                addResourceRole={triggerAddResourceRole}
+      <DialogTitle>New user</DialogTitle>
+      <DialogContent>
+        <form>
+          <FormGroup>
+            <FormControl fullWidth>
+              <FormLabel>Name</FormLabel>
+              <TextField
+                onChange={(event) =>
+                  triggerUpdateForm(event?.target?.value, "name")
+                }
+                className={styles.textInput}
+                variant="outlined"
               />
+            </FormControl>
 
-              <Tooltip placement="top" title="Copy the private key first!">
-                <Button
-                  disabled={isCreating || !isPrivateKeySaved}
-                  variant="contained"
-                  onClick={triggerCreateUser}
+            <FormControl fullWidth>
+              <FormLabel>Email</FormLabel>
+              <TextField
+                onChange={(event) =>
+                  triggerUpdateForm(event?.target?.value, "email")
+                }
+                className={styles.textInput}
+                variant="outlined"
+              />
+            </FormControl>
+
+            <FormControl
+              className={styles.usePublicKeyControl}
+              onClick={triggerUsePersonalPublicKey}
+              fullWidth
+            >
+              <FormLabel>Do you want to use your Public Key?</FormLabel>
+              <Switch checked={isPublicKeyFromUser} />
+            </FormControl>
+
+            {isPublicKeyFromUser && (
+              <FormControl fullWidth>
+                <FormLabel>Public key</FormLabel>
+                <TextField
+                  multiline
+                  rows={4}
+                  onChange={(event) =>
+                    triggerUpdateForm(event?.target?.value, "publicKey")
+                  }
+                  className={styles.textInput}
+                  variant="outlined"
+                />
+              </FormControl>
+            )}
+            {typeof formState?.publicKey === "string" &&
+              !validateUserPublicKey(formState?.publicKey) && (
+                <Alert
+                  className={styles.pemKeyFormatErrorAlert}
+                  severity="error"
                 >
-                  Create
+                  Public key is not correctly formatted or missing (Provide it
+                  in PEM format).
+                </Alert>
+              )}
+
+            {!isPublicKeyFromUser && (
+              <>
+                <Button
+                  disabled={isPrivateKeySaved}
+                  variant="outlined"
+                  onClick={triggerCreateKeyPair}
+                >
+                  {isPrivateKeySaved
+                    ? "Private key copied!"
+                    : "Create keys pair"}
                 </Button>
-              </Tooltip>
-            </FormGroup>
-          </form>
-        </Box>
-      </Fade>
-    </Modal>
+
+                <ShowPrivateKeyToSave
+                  handleClose={() => setIsPrivateKeySaved(true)}
+                  privateKey={privateKey}
+                />
+              </>
+            )}
+
+            <FormControl
+              className={styles.selectResourceRoles}
+              onClick={triggerSelectResourceRoles}
+              fullWidth
+            >
+              <FormLabel>
+                Do you want to add resources and relative roles?
+              </FormLabel>
+              <Switch checked={selectResourceRoles} />
+            </FormControl>
+
+            <ResourceRoleSelector
+              blocks={formState?.resourceRoles}
+              selectResourceRoles={selectResourceRoles}
+              addResourceRole={triggerAddResourceRole}
+            />
+
+            <Tooltip placement="top" title="Copy the private key first!">
+              <Button
+                disabled={isCreating || !isPrivateKeySaved}
+                variant="contained"
+                onClick={triggerCreateUser}
+              >
+                Create
+              </Button>
+            </Tooltip>
+          </FormGroup>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

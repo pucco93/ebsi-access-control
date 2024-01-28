@@ -17,7 +17,7 @@ import {
   getRoles,
 } from "../../../store/accessControlListSelectors";
 import { Add, Delete } from "@mui/icons-material";
-import styles from '../UsersView.module.css';
+import styles from "../UsersView.module.css";
 import { useCallback } from "react";
 
 export interface IResourceRoleProps {
@@ -35,25 +35,11 @@ const ResourceRoleSelector = (props: IResourceRoleProps) => {
     (state: { accessControlList: AccessControlListType }) => getRoles(state)
   );
 
-  const onResourceChange = useCallback((newValue: string, index: number) => {
-    if (newValue) {
-      const newBlock = blocks[index];
-      newBlock.resourceName = newValue;
-      const newBlockList = [
-        ...blocks.slice(0, index),
-        newBlock,
-        ...blocks.slice(index + 1, blocks.length),
-      ];
-      addResourceRole(newBlockList);
-    }
-  }, [resources, blocks]);
-
-  const onRoleChange = useCallback((newValue: string, index: number) => {
-    if (newValue) {
-      const newRole = roles.find((role) => role.name === newValue);
-      if (newRole?.name) {
+  const onResourceChange = useCallback(
+    (newValue: string, index: number) => {
+      if (newValue) {
         const newBlock = blocks[index];
-        newBlock.role = newRole;
+        newBlock.resourceName = newValue;
         const newBlockList = [
           ...blocks.slice(0, index),
           newBlock,
@@ -61,8 +47,28 @@ const ResourceRoleSelector = (props: IResourceRoleProps) => {
         ];
         addResourceRole(newBlockList);
       }
-    }
-  }, [roles, blocks]);
+    },
+    [resources, blocks]
+  );
+
+  const onRoleChange = useCallback(
+    (newValue: string, index: number) => {
+      if (newValue) {
+        const newRole = roles.find((role) => role.name === newValue);
+        if (newRole?.name) {
+          const newBlock = blocks[index];
+          newBlock.role = newRole;
+          const newBlockList = [
+            ...blocks.slice(0, index),
+            newBlock,
+            ...blocks.slice(index + 1, blocks.length),
+          ];
+          addResourceRole(newBlockList);
+        }
+      }
+    },
+    [roles, blocks]
+  );
 
   const triggerAddItem = useCallback(() => {
     const newResourceRole = {
@@ -76,19 +82,29 @@ const ResourceRoleSelector = (props: IResourceRoleProps) => {
     addResourceRole([...blocks, newResourceRole]);
   }, [addResourceRole, blocks]);
 
-  const triggerDeleteRow = useCallback((index: number) => {
-    const newBlocks = [...blocks];
-    newBlocks.splice(index, 1);
-    addResourceRole(newBlocks);
-  }, [blocks, addResourceRole]);
+  const triggerDeleteRow = useCallback(
+    (index: number) => {
+      const newBlocks = [...blocks];
+      newBlocks.splice(index, 1);
+      addResourceRole(newBlocks);
+    },
+    [blocks, addResourceRole]
+  );
 
   return (
     selectResourceRoles && (
       <>
         <List>
           {blocks?.map((block: ResourceRole, index: number) => (
-            <ListItem key={index} style={{ paddingLeft: '0px', paddingRight: '0px', justifyContent: "space-between" }}>
-              <FormControl fullWidth style={{marginRight: '1%'}}>
+            <ListItem
+              key={index}
+              style={{
+                paddingLeft: "0px",
+                paddingRight: "0px",
+                justifyContent: "space-between",
+              }}
+            >
+              <FormControl fullWidth style={{ marginRight: "1%" }}>
                 <InputLabel id="select-resource">Resource</InputLabel>
                 <Select
                   labelId="resource-select-label"
@@ -100,12 +116,14 @@ const ResourceRoleSelector = (props: IResourceRoleProps) => {
                   }
                 >
                   {resources?.map((resource: Resource) => (
-                    <MenuItem key={resource?.name} value={resource?.name}>{resource?.name}</MenuItem>
+                    <MenuItem key={resource?.name} value={resource?.name}>
+                      {resource?.name}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
 
-              <FormControl fullWidth style={{marginLeft: '1%'}}>
+              <FormControl fullWidth style={{ marginLeft: "1%" }}>
                 <InputLabel id="select-role">Role</InputLabel>
                 <Select
                   labelId="role-select-label"
@@ -117,12 +135,20 @@ const ResourceRoleSelector = (props: IResourceRoleProps) => {
                   }
                 >
                   {roles?.map((role: Role) => (
-                    <MenuItem value={role?.name} key={role.name}>{role?.name}</MenuItem>
+                    <MenuItem value={role?.name} key={role.name}>
+                      {role?.name}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-              <FormControl style={{margin: '0px 2%'}}>
-                <IconButton onClick={() => triggerDeleteRow(index)} color="error" aria-label="Delete"><Delete /></IconButton>
+              <FormControl style={{ margin: "0px 2%" }}>
+                <IconButton
+                  onClick={() => triggerDeleteRow(index)}
+                  color="error"
+                  aria-label="Delete"
+                >
+                  <Delete />
+                </IconButton>
               </FormControl>
             </ListItem>
           ))}

@@ -11,19 +11,30 @@ import UsersTable from "./UsersTable";
 import { useEffect, useState } from "react";
 import {
   listenForUsersEvents,
-  requestEbsiDID,
   requestUsers,
   requestUsersEbsiDIDsArray,
 } from "../../contracts_connections/Users";
 // import { requestUsers } from "../../ contracts_connections/ContractsConnections";
 import styles from "./UsersView.module.css";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import AccessControlListType from "../../store/accessControlListType";
-import { getCreatedUser, getDeletedUser, getLoader, getUpdatedUser, getUsers } from "../../store/accessControlListSelectors";
+import {
+  getCreatedUser,
+  getDeletedUser,
+  getLoader,
+  getUpdatedUser,
+  getUsers,
+} from "../../store/accessControlListSelectors";
 import { USERS } from "../../constants/Constants";
 import Actions from "../reusables/Actions/Actions";
 import UserCreationModal from "./UserCreationModal";
-import { setCreatedUser, setDeletedUser, setUpdatedUser } from "../../store/accessControlListStore";
+import {
+  setCreatedUser,
+  setDeletedUser,
+  setUpdatedUser,
+} from "../../store/accessControlListStore";
+import ManageResourcesModal from "./sub-components/ManageResourcesModal";
+import User from "../../models/User";
 
 const NoUsers = () => {
   return (
@@ -59,6 +70,8 @@ const UsersView = () => {
   const [isOpen, setOpen] = useState(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [openSnackbar, setSnackbarOpen] = useState<boolean>(false);
+  const [isManageModalOpen, setIsManageModalOpened] = useState<boolean>(false);
+  const [openedUser, updateOpenedUser] = useState<User | null>(null);
   const [alertData, setAlertData] = useState<{
     status: AlertColor | undefined;
     name: string;
@@ -68,6 +81,7 @@ const UsersView = () => {
     name: "",
     status: undefined,
   });
+  const dispatch = useDispatch();
   const isLoading = show && typeof dataType === USERS;
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -79,8 +93,9 @@ const UsersView = () => {
   }, []);
 
   useEffect(() => {
+    debugger
     setIsCreating(false);
-    if (createdUser) {
+    if (createdUser?.ebsiDID) {
       setSnackbarOpen(true);
       handleClose();
       setAlertData({
@@ -90,14 +105,14 @@ const UsersView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setCreatedUser({ status: undefined, ebsiDID: '' });
+        dispatch(setCreatedUser({ action: "", status: undefined, ebsiDID: "" }));
       }, 6000);
     }
   }, [createdUser]);
 
   useEffect(() => {
     setIsCreating(false);
-    if (deletedUser) {
+    if (deletedUser?.ebsiDID) {
       setSnackbarOpen(true);
       handleClose();
       setAlertData({
@@ -107,15 +122,14 @@ const UsersView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setDeletedUser({ status: undefined, ebsiDID: '' });
+        dispatch(setDeletedUser({ status: undefined, ebsiDID: "" }));
       }, 6000);
     }
   }, [deletedUser]);
 
   useEffect(() => {
-
     setIsCreating(false);
-    if (updatedUser) {
+    if (updatedUser?.ebsiDID) {
       setSnackbarOpen(true);
       handleClose();
       setAlertData({
@@ -125,7 +139,7 @@ const UsersView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setUpdatedUser({ status: undefined, ebsiDID: '' });
+        dispatch(setUpdatedUser({ status: undefined, ebsiDID: "" }));
       }, 6000);
     }
   }, [updatedUser]);
@@ -136,7 +150,11 @@ const UsersView = () => {
       {isLoading && <CircularProgress />}
       {!isLoading && users?.length > 0 && (
         <Paper>
-          <UsersTable setIsCreating={setIsCreating} />
+          <UsersTable
+            setIsCreating={setIsCreating}
+            openManageModal={() => setIsManageModalOpened(true)}
+            openUser={updateOpenedUser}
+          />
         </Paper>
       )}
       {!isLoading && users?.length === 0 && <NoUsers />}
@@ -145,6 +163,11 @@ const UsersView = () => {
         closeModal={handleClose}
         isCreating={isCreating}
         setIsCreating={setIsCreating}
+      />
+      <ManageResourcesModal
+        isOpen={isManageModalOpen}
+        closeModal={() => setIsManageModalOpened(false)}
+        user={openedUser}
       />
       <Snackbar
         onClose={handleClose}

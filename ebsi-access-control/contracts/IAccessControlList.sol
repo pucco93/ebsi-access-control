@@ -28,17 +28,15 @@ abstract contract IAccessControlList is Data {
     function getAllUsers() external virtual view returns (User[] memory);
     // Get all the ebsiDIDs created (only dids, no data)
     function getAllEbsiDIDs() external virtual view returns (string[] memory ebsiDIDs);
-    // Add passed resource to the passed 
-    function assignResourceToUser(string calldata ebsiDID, bytes32 resourceName, Role memory role) external virtual;
-    // Remove passed resource to the passed user
-    function removeResourceFromUser(string calldata ebsiDID, bytes32 resourceName, bytes32[] memory newResourcesNames) external virtual;
+    // This function can be used to delete or add resources to a user with respective roles
+    function updateUserResources(string calldata ebsiDID, bytes32[] calldata newResourcesNames, bytes32 resourceName, Role memory role, string calldata action) external virtual;
 
     // ROLES FUNCTIONS
     // Get a role from the mapping
     function getRole(bytes32 roleID) external view virtual returns (Role memory);
-    // Only callable from who has grant permission
+    // TODO // Only callable from who has grant permission
     function assignRole(string calldata requester, string calldata ebsiDID, bytes32 resourceUID, Role calldata role) external virtual;
-    // Only callable from who has revoke permissions
+    // TODO // Only callable from who has revoke permissions
     function revokeRole(string calldata requester, string calldata ebsiDID, bytes32 resourceUID) external virtual;
     // Create a custom role with permissions (usefull if admin has created custom permissions or else)
     function createCustomRole(bytes32 roleName, bytes32[] calldata permissions) external virtual;
@@ -83,10 +81,10 @@ abstract contract IAccessControlList is Data {
     function getAllResources() external virtual view returns (Resource[] memory resources);
     // Get all user resources
     function getAllUserResources(string calldata ebsiDID) external virtual view returns (Resource[] memory resources);
-    // Get all users in a resource's blacklist
+    // TODO // Get all users in a resource's blacklist
     function getAllUsersInBlacklist(string calldata requester, bytes32 resourceID) external view virtual returns (string[] calldata users);
-    // Add a user to a resource's blacklist
+    // TODO // Add a user to a resource's blacklist
     function addUserToBlackList(string calldata requester, string calldata ebsiDID, bytes32 uniqueID) external virtual;
-    // Remove a user from a resource's blacklist
+    // TODO // Remove a user from a resource's blacklist
     function removeUserFromBlacklist(string calldata requester, string calldata ebsiDID, bytes32 uniqueID, string[] calldata newBlacklist) external virtual;
 }

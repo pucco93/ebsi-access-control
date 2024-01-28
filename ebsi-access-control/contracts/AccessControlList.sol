@@ -136,24 +136,16 @@ contract AccessControlList is IAccessControlList, Utilities {
         return isAlreadyBlacklisted;
     }
 
-    function assignResourceToUser(string calldata ebsiDID, bytes32 resourceName, Role memory role) external override {
-        users[ebsiDID].resourcesHashes.push(resourceName);
-        userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourceName)] = role;
-
-        emit UserUpdated(
-            'updated-resource-added',
-            ebsiDID,
-            block.timestamp,
-            resourceName
-        );
-    }
-
-    function removeResourceFromUser(string calldata ebsiDID, bytes32 resourceName, bytes32[] memory newResourcesNames) external override {
+    function updateUserResources(string calldata ebsiDID, bytes32[] calldata newResourcesNames, bytes32 resourceName, Role memory role, string calldata action) external override {
         users[ebsiDID].resourcesHashes = newResourcesNames;
-        delete userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourceName)];
+        if (compareStrings(action, "creation")) {
+            userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourceName)] = role;
+        } else {
+            delete userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourceName)];
+        }
 
         emit UserUpdated(
-            'updated-resource-removed',
+            compareStrings(action, "creation") ? 'updated-resource-added' : 'updated-resource-removed',
             ebsiDID,
             block.timestamp,
             resourceName
@@ -193,22 +185,6 @@ contract AccessControlList is IAccessControlList, Utilities {
         });
         existingResources[name] = true;
         createdResourcesArray.push(name);
-
-        // if (bytes(ebsiDID).length != 0) {
-        //     users[ebsiDID].resourcesHashes.push(name);
-        //     userResourceToRoleData[
-        //         createResourceToRoleHash(ebsiDID, name)
-        //     ] = roles["admin"];
-
-        //     // emit UserUpdated(
-        //     //     ''
-        //     //     block.timestamp,
-        //     //     ebsiDID,
-        //     //     "",
-        //     //     "",
-        //     //     ""
-        //     // );
-        // }
 
         emit ResourceUpdated("creation", name, block.timestamp, "", false);
         return name;
