@@ -6,7 +6,7 @@ const useAlert = (msg: string, color: string = 'green') => {
     store.dispatch(createAlert({msg, show: true, color}));
     setTimeout(() => {
         store.dispatch(deleteAlert());
-    }, 6000);
+    }, 3000);
 };
 
 export default useAlert;

@@ -46,7 +46,6 @@ const RolesTable = (props: IRolesTableProps) => {
   };
 
   const triggerDeleteRow = (row: Role) => {
-    debugger;
     if (row?.name) {
       setIsCreating(true);
       requestDeleteRole(row?.name);
@@ -60,8 +59,8 @@ const RolesTable = (props: IRolesTableProps) => {
           <TableHead>
             <TableRow>
               <TableCell align="left">Name</TableCell>
-              <TableCell align="left">Is custom?</TableCell>
-              <TableCell align="left">Actions</TableCell>
+              <TableCell align="right">Is custom?</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -71,10 +70,10 @@ const RolesTable = (props: IRolesTableProps) => {
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
                 <TableCell align="left">{role.name}</TableCell>
-                <TableCell align="left">
+                <TableCell align="right">
                   {role.isCustom ? <Check /> : <Close />}
                 </TableCell>
-                <TableCell align="left">
+                <TableCell align="right">
                   {role.isCustom && (
                     <Button
                       onClick={() => triggerDeleteRow(role)}

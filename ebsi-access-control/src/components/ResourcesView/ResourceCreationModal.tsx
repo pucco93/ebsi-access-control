@@ -25,8 +25,6 @@ interface IUserCreationModalProps {
 const ResourceCreationModal = (props: IUserCreationModalProps) => {
   const { isOpen, handleClose, isCreating, setIsCreating } = props;
   const [name, udpateName] = useState<string>("");
-  const [userToAdd, setUserToAdd] = useState<string>("");
-  const [useCurrentUser, setUseCurrentUser] = useState<boolean>(false);
   const [errorInForm, updateErrorInForm] = useState<boolean>(false);
   const [nameLength, updateNameLength] = useState<number>(0);
 
@@ -36,19 +34,11 @@ const ResourceCreationModal = (props: IUserCreationModalProps) => {
     updateNameLength(newValue?.length || 0);
   };
 
-  const triggerUpdateUseCurrentUser = () => {
-    setUseCurrentUser(!useCurrentUser);
-  };
-
-  const triggerUpdateUserToAdd = (newValue: string) => {
-    setUserToAdd(newValue);
-  };
-
   const submitNewResource = () => {
     if (!isCreating) {
       if (name && name.length <= 32) {
         setIsCreating(true);
-        requestCreateResource(name, useCurrentUser, userToAdd);
+        requestCreateResource(name);
         triggerCloseModal();
       } else {
         updateErrorInForm(true);
@@ -71,7 +61,7 @@ const ResourceCreationModal = (props: IUserCreationModalProps) => {
       onClose={triggerCloseModal}
     >
       <DialogTitle>New resource</DialogTitle>
-      <DialogContent>
+      <DialogContent className={styles.dialog}>
         <form>
           <FormGroup>
             <FormControl fullWidth>
@@ -91,33 +81,6 @@ const ResourceCreationModal = (props: IUserCreationModalProps) => {
                 variant="outlined"
               />
             </FormControl>
-            {/* <FormControl
-              className={styles.currentUserControl}
-              onClick={() => triggerUpdateUseCurrentUser()}
-            >
-              <FormLabel className={styles.resourceNameLabel}>
-                Use current user?
-              </FormLabel>
-              <Switch checked={useCurrentUser} className={styles.switchInput} />
-            </FormControl>
-
-            <FormControl fullWidth>
-              {!useCurrentUser && (
-                <>
-                  <FormLabel className={styles.resourceNameLabel}>
-                    User to add
-                  </FormLabel>
-                  <TextField
-                    autoFocus={true}
-                    onChange={(event) =>
-                      triggerUpdateUserToAdd(event?.target?.value)
-                    }
-                    className={styles.textInput}
-                    variant="outlined"
-                  />
-                </>
-              )}
-            </FormControl> */}
             <Button
               variant="contained"
               disabled={isCreating}

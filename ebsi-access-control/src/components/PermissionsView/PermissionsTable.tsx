@@ -48,7 +48,6 @@ const PermissionsTable = (props: IPermissionsTableProps) => {
   };
 
   const triggerDeleteRow = (row: Permission) => {
-    debugger;
     if (row?.name) {
       setIsCreating(true);
       requestDeletePermission(row?.name);
@@ -62,8 +61,8 @@ const PermissionsTable = (props: IPermissionsTableProps) => {
           <TableHead>
             <TableRow>
               <TableCell align="left">Name</TableCell>
-              <TableCell align="left">Is custom?</TableCell>
-              <TableCell align="left">Actions</TableCell>
+              <TableCell align="right">Is custom?</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -73,10 +72,10 @@ const PermissionsTable = (props: IPermissionsTableProps) => {
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
                 <TableCell align="left">{permission.name}</TableCell>
-                <TableCell align="left">
+                <TableCell align="right">
                   {permission.isCustom ? <Check /> : <Close />}
                 </TableCell>
-                <TableCell align="left">
+                <TableCell align="right">
                   {permission.isCustom && (
                     <Button
                       onClick={() => triggerDeleteRow(permission)}

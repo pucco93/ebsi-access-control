@@ -5,6 +5,7 @@ import { fromBytes32ToString } from "../utilities/utilities";
 // GENERAL
 export const getAlert = (state: { accessControlList: AccessControlListType }) => state.accessControlList.alert;
 export const getCustomErrorsAlert = (state: { accessControlList: AccessControlListType }) => state.accessControlList.customErrorsAlert;
+export const getPermissionDeniedErrorsAlert = (state: { accessControlList: AccessControlListType }) => state.accessControlList.permissionDeniedErrorsAlert;
 export const getLoader = (state: { accessControlList: AccessControlListType }) => state.accessControlList.loader;
 export const getConnectedAccount = (state: { accessControlList: AccessControlListType }) => state.accessControlList.connectedAccount;
 
@@ -33,6 +34,8 @@ export const getResources = (state: { accessControlList: AccessControlListType }
 export const getResourcesHashes = (state: { accessControlList: AccessControlListType }) => state.accessControlList.resourcesHashes;
 export const getCreatedResource = (state: { accessControlList: AccessControlListType }) => state.accessControlList.createdResource;
 export const getDeletedResource = (state: { accessControlList: AccessControlListType }) => state.accessControlList.deletedResource;
+export const getUpdatedResource = (state: { accessControlList: AccessControlListType }) => state.accessControlList.updatedResource;
+export const getBlacklistUsers = (state: { accessControlList: AccessControlListType }) => state.accessControlList.blacklistUsers;
 
 // USERS
 export const getUsers = (state: { accessControlList: AccessControlListType }) => state.accessControlList.users;
@@ -40,3 +43,4 @@ export const getEbsiDIDs = (state: { accessControlList: AccessControlListType })
 export const getCreatedUser =(state: { accessControlList: AccessControlListType }) => state.accessControlList.createdUser;
 export const getDeletedUser = (state: { accessControlList: AccessControlListType }) => state.accessControlList.deletedUser;
 export const getUpdatedUser = (state: { accessControlList: AccessControlListType }) => state.accessControlList.updatedUser;
+export const getCurrentUserInView = (state: { accessControlList: AccessControlListType }) => state.accessControlList.currentUserInView;

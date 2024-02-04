@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import AccessControlListType from "../../store/accessControlListType";
 import { PERMISSIONS } from "../../constants/Constants";
 import {
@@ -71,6 +71,7 @@ const PermissionsView = () => {
     name: "",
     status: undefined,
   });
+  const dispatch = useDispatch();
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
@@ -82,7 +83,7 @@ const PermissionsView = () => {
 
   useEffect(() => {
     setIsCreating(false);
-    if (createdPermission) {
+    if (createdPermission?.permission?.name) {
       setSnackbarOpen(true);
       handleClose();
       setAlertData({
@@ -92,14 +93,19 @@ const PermissionsView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setCreatedPermission({ status: undefined, permission: null });
-      }, 6000);
+        dispatch(setCreatedPermission({ status: undefined, permission: null }));
+        setAlertData({
+          action: "",
+          name: "",
+          status: undefined,
+        });
+      }, 3000);
     }
   }, [createdPermission]);
 
   useEffect(() => {
     setIsCreating(false);
-    if (deletedPermission) {
+    if (deletedPermission?.permission?.name) {
       setSnackbarOpen(true);
       handleClose();
       setAlertData({
@@ -109,8 +115,13 @@ const PermissionsView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setDeletedPermission({ status: undefined, permission: null });
-      }, 6000);
+        dispatch(setDeletedPermission({ status: undefined, permission: null }));
+        setAlertData({
+          action: "",
+          name: "",
+          status: undefined,
+        });
+      }, 3000);
     }
   }, [deletedPermission]);
 

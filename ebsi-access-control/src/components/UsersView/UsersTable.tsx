@@ -25,12 +25,14 @@ import styles from "./UsersView.module.css";
 import { formatDate } from "../../utilities/utilities";
 import { requestDeleteUser } from "../../contracts_connections/Users";
 
-export const LightHtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} classes={{ popper: className }} />
-))(({ theme }) => ({
+export const LightHtmlTooltip = styled(
+  ({ className, ...props }: TooltipProps) => (
+    <Tooltip {...props} classes={{ popper: className }} />
+  )
+)(({ theme }) => ({
   [`& .${tooltipClasses.tooltip}`]: {
     backgroundColor: theme.palette.common.white,
-    color: 'rgba(0, 0, 0, 0.87)',
+    color: "rgba(0, 0, 0, 0.87)",
     boxShadow: theme.shadows[1],
     fontSize: 11,
   },
@@ -69,7 +71,7 @@ const UsersTable = (props: IUsersTableProps) => {
   const triggerDeleteUser = (event: any, user: User) => {
     event.preventDefault();
     event.stopPropagation();
-    if(user.ebsiDID) {
+    if (user.ebsiDID) {
       setIsCreating(true);
       requestDeleteUser(user);
     }
@@ -100,8 +102,7 @@ const UsersTable = (props: IUsersTableProps) => {
                 key={user.ebsiDID}
                 className={styles.userRow}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                onClick={() => 
-                  handleRowClick(user)}
+                onClick={() => handleRowClick(user)}
               >
                 <Tooltip title={user?.ebsiDID}>
                   <TableCell className={styles.ebsiDIDCell} align="right">
@@ -109,27 +110,41 @@ const UsersTable = (props: IUsersTableProps) => {
                   </TableCell>
                 </Tooltip>
                 <TableCell className={styles.chipsContainerCell} align="right">
-                  <LightHtmlTooltip
-                    title={
-                      <Stack direction="row" spacing={1}>
-                      {user.resources?.map((resource: string) => (
-                        <Chip key={resource} label={resource}></Chip>
-                      ))}
-                    </Stack>
-                    }
+                  <Stack
+                    className={styles.chipsContainerStack}
+                    direction="row"
+                    spacing={1}
                   >
-                    <Stack direction="row" spacing={1}>
-                      {(user?.resources.length > 2 ? user?.resources.slice(0, 2) : user.resources)?.map((resource: string) => (
-                        <Chip key={resource} label={resource}></Chip>
-                      ))}
-                    </Stack>
-                  </LightHtmlTooltip>
+                    {(user?.resources.length > 2
+                      ? user?.resources.slice(0, 2)
+                      : user.resources
+                    )?.map((resource: string) => (
+                      <LightHtmlTooltip
+                        key={resource}
+                        title={
+                          <Stack direction="row" spacing={1}>
+                            {resource}
+                          </Stack>
+                        }
+                      >
+                        <Chip label={resource}></Chip>
+                      </LightHtmlTooltip>
+                    ))}
+                  </Stack>
                 </TableCell>
-                <TableCell align="right">{formatDate(user?.createdTime)}</TableCell>
-                <TableCell align="right">{formatDate(user?.lastUpdate)}</TableCell>
-                <TableCell align="right">{formatDate(user?.lastAccess)}</TableCell>
                 <TableCell align="right">
-                  <IconButton onClick={(event: any)=> triggerDeleteUser(event, user)}>
+                  {formatDate(user?.createdTime)}
+                </TableCell>
+                <TableCell align="right">
+                  {formatDate(user?.lastUpdate)}
+                </TableCell>
+                <TableCell align="right">
+                  {formatDate(user?.lastAccess)}
+                </TableCell>
+                <TableCell align="right">
+                  <IconButton
+                    onClick={(event: any) => triggerDeleteUser(event, user)}
+                  >
                     <Delete />
                   </IconButton>
                   <IconButton>

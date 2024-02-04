@@ -67,16 +67,12 @@ contract Data {
     mapping(bytes32 => bool) existingRoles;
     // This is used to know if a particular permission has been already created
     mapping(bytes32 => bool) existingPermissions;
-    // Mapping to retrieve if a particular user with a particular resource is blacklisted
-    mapping(string => bool) blacklistMapping;
 
     // Events
     event ResourceUpdated(
         string eventType,
         bytes32 name,
-        uint lastUpdated,
-        string listedUser,
-        bool isBlacklisted
+        uint lastUpdated
     );
 
     event UserUpdated(
@@ -102,6 +98,10 @@ contract Data {
         string message
     );
 
+    event PermissionDenied(
+        string messsage
+    );
+
     // Default permissions
     bytes32 read;
     bytes32 create;
@@ -112,62 +112,62 @@ contract Data {
 
     //INITIALIZE DATA
     function initRoles() public {
-        PermissionStruct memory READ_PERMISSION = PermissionStruct({ permission: "read", isCustom: false });
-        PermissionStruct memory EDIT_PERMISSION = PermissionStruct({ permission: "edit", isCustom: false });
-        PermissionStruct memory DELETE_PERMISSION = PermissionStruct({ permission: "delete", isCustom: false });
-        PermissionStruct memory CREATE_PERMISSION = PermissionStruct({ permission: "create", isCustom: false });
-        PermissionStruct memory GRANT_PERMISSION = PermissionStruct({ permission: "grant", isCustom: false }); // Allow a user to give permissions to a user
-        PermissionStruct memory REVOKE_PERMISSION = PermissionStruct({ permission: "revoke", isCustom: false }); // Allow a user to revoke permission to another user
+        PermissionStruct memory READ_PERMISSION = PermissionStruct({ permission: bytes32("read"), isCustom: false });
+        PermissionStruct memory EDIT_PERMISSION = PermissionStruct({ permission: bytes32("edit"), isCustom: false });
+        PermissionStruct memory DELETE_PERMISSION = PermissionStruct({ permission: bytes32("delete"), isCustom: false });
+        PermissionStruct memory CREATE_PERMISSION = PermissionStruct({ permission: bytes32("create"), isCustom: false });
+        PermissionStruct memory GRANT_PERMISSION = PermissionStruct({ permission: bytes32("grant"), isCustom: false }); // Allow a user to give permissions to a user
+        PermissionStruct memory REVOKE_PERMISSION = PermissionStruct({ permission: bytes32("revoke"), isCustom: false }); // Allow a user to revoke permission to another user
 
         // Default permissions - can be added using createCustomPermissions
-        read = "read";
+        read = bytes32("read");
         permissionIDToPermissionData[read] = READ_PERMISSION;
         createdPermissionsArray.push(read);
         existingPermissions[read] = true;
 
-        edit = "edit";
+        edit = bytes32("edit");
         permissionIDToPermissionData[edit] = EDIT_PERMISSION;
         createdPermissionsArray.push(edit);
         existingPermissions[edit] = true;
 
-        create = "create";
+        create = bytes32("create");
         permissionIDToPermissionData[create] = CREATE_PERMISSION;
         createdPermissionsArray.push(create);
         existingPermissions[create] = true;
 
-        deletePermission = "delete";
+        deletePermission = bytes32("delete");
         permissionIDToPermissionData[deletePermission] = DELETE_PERMISSION;
         createdPermissionsArray.push(deletePermission);
         existingPermissions[deletePermission] = true;
 
-        grant = "grant";
+        grant = bytes32("grant");
         permissionIDToPermissionData[grant] = GRANT_PERMISSION;
         createdPermissionsArray.push(grant);
         existingPermissions[grant] = true;
 
-        revoke = "revoke";
+        revoke = bytes32("revoke");
         permissionIDToPermissionData[revoke] = REVOKE_PERMISSION;
         createdPermissionsArray.push(revoke);
         existingPermissions[revoke] = true;
 
-        bytes32 hashedUserRoleID = "user";
-        bytes32 hashedEditorRoleID = "editor";
-        bytes32 hashedManagerRoleID = "manager";
-        bytes32 hashedAdminRoleID = "admin";
+        bytes32 hashedUserRoleID = bytes32("user");
+        bytes32 hashedEditorRoleID = bytes32("editor");
+        bytes32 hashedManagerRoleID = bytes32("manager");
+        bytes32 hashedAdminRoleID = bytes32("admin");
 
         // Default roles - can be added using createCustomRole
         createdRolesArray = [bytes32(hashedUserRoleID), hashedEditorRoleID, hashedManagerRoleID, hashedAdminRoleID];
 
-        roles[hashedUserRoleID] = Role({ permissions: new bytes32[](1), name: 'user', isCustom: false });
+        roles[hashedUserRoleID] = Role({ permissions: new bytes32[](1), name: bytes32('user'), isCustom: false });
         existingRoles[hashedUserRoleID] = true;
 
-        roles[hashedEditorRoleID] = Role({ permissions: new bytes32[](4), name: 'editor', isCustom: false });
+        roles[hashedEditorRoleID] = Role({ permissions: new bytes32[](4), name: bytes32('editor'), isCustom: false });
         existingRoles[hashedEditorRoleID] = true;
 
-        roles[hashedManagerRoleID] = Role({ permissions: new bytes32[](5), name: 'manager', isCustom: false });
+        roles[hashedManagerRoleID] = Role({ permissions: new bytes32[](5), name: bytes32('manager'), isCustom: false });
         existingRoles[hashedManagerRoleID] = true;
 
-        roles[hashedAdminRoleID] = Role({ permissions: new bytes32[](6), name: 'admin', isCustom: false });
+        roles[hashedAdminRoleID] = Role({ permissions: new bytes32[](6), name: bytes32('admin'), isCustom: false });
         existingRoles[hashedAdminRoleID] = true;
 
         roles[hashedUserRoleID].permissions[0] = read;

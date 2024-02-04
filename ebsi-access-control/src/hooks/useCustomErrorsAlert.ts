@@ -5,7 +5,7 @@ const useCustomErrorsAlert = (msg: string, color: string = 'red') => {
     store.dispatch(createCustomErrorsAlert({msg, show: true, color}));
     setTimeout(() => {
         store.dispatch(deleteCustomErrorsAlert());
-    }, 6000);
+    }, 3000);
 };
 
 export default useCustomErrorsAlert;

@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import Actions from "../reusables/Actions/Actions";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import AccessControlListType from "../../store/accessControlListType";
 import { useEffect, useState } from "react";
 import { ROLES } from "../../constants/Constants";
@@ -72,6 +72,7 @@ const RolesView = () => {
     name: "",
     status: undefined,
   });
+  const dispatch = useDispatch();
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
@@ -94,8 +95,13 @@ const RolesView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setCreatedRole({ status: undefined, role: null });
-      }, 6000);
+        dispatch(setCreatedRole({ status: undefined, role: null }));
+        setAlertData({
+          action: "",
+          name: "",
+          status: undefined,
+        });
+      }, 3000);
     }
   }, [createdRole]);
 
@@ -111,8 +117,13 @@ const RolesView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setDeletedRole({ status: undefined, role: null });
-      }, 6000);
+        dispatch(setDeletedRole({ status: undefined, role: null }));
+        setAlertData({
+          action: "",
+          name: "",
+          status: undefined,
+        });
+      }, 3000);
     }
   }, [deletedRole]);
 

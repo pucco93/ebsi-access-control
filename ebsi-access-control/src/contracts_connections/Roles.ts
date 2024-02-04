@@ -51,10 +51,11 @@ export const listenForRoles = () => {
 };
 
 export const requestRolesHashes = async () => {
+  const { connectedAccount } = store.getState().accessControlList || {};
 
   try {
     if (contract) {
-      const response: any = await contract?.methods.getAllRolesInBytes32().call();
+      const response: any = await contract?.methods.getAllRolesInBytes32().call({ from: connectedAccount });
       store.dispatch(setRolesHashes(response));
       return;
     }
@@ -66,10 +67,11 @@ export const requestRolesHashes = async () => {
 };
 
 export const requestRoles = async () => {
+  const { connectedAccount } = store.getState().accessControlList || {};
 
   try {
     if (contract) {
-      const response: any = await contract?.methods.getAllAvailableRoles().call();
+      const response: any = await contract?.methods.getAllAvailableRoles().call({ from: connectedAccount });
       const formattedRoles = formatRoles(response);
       store.dispatch(setRoles(formattedRoles));
       return;
@@ -82,10 +84,12 @@ export const requestRoles = async () => {
 };
 
 export const requestRole = async (roleName: string) => {
+  const { connectedAccount } = store.getState().accessControlList || {};
+  
   try {
     if (contract) {
       const roleID = fromStringToBytes32(roleName);
-      const response = await contract?.methods.getRole(roleID).call();
+      const response = await contract?.methods.getRole(roleID).call({ from: connectedAccount });
       const roleResults = response?.role !== INVALID_BYTES_32 ? [formatRole(response)] : []
       store.dispatch(setRoles(roleResults));
       return;

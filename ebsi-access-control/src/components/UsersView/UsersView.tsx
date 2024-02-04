@@ -10,6 +10,7 @@ import {
 import UsersTable from "./UsersTable";
 import { useEffect, useState } from "react";
 import {
+  getAllUserRoles,
   listenForUsersEvents,
   requestUsers,
   requestUsersEbsiDIDsArray,
@@ -86,6 +87,11 @@ const UsersView = () => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
+  const triggerOpenUser = (user: User) => {
+    getAllUserRoles(user?.ebsiDID);
+    updateOpenedUser(user);
+  };
+
   useEffect(() => {
     requestUsers();
     listenForUsersEvents();
@@ -93,7 +99,6 @@ const UsersView = () => {
   }, []);
 
   useEffect(() => {
-    debugger
     setIsCreating(false);
     if (createdUser?.ebsiDID) {
       setSnackbarOpen(true);
@@ -106,7 +111,8 @@ const UsersView = () => {
       setTimeout(() => {
         setSnackbarOpen(false);
         dispatch(setCreatedUser({ action: "", status: undefined, ebsiDID: "" }));
-      }, 6000);
+        setAlertData({ action: "", status: undefined, name: "" });
+      }, 3000);
     }
   }, [createdUser]);
 
@@ -123,7 +129,8 @@ const UsersView = () => {
       setTimeout(() => {
         setSnackbarOpen(false);
         dispatch(setDeletedUser({ status: undefined, ebsiDID: "" }));
-      }, 6000);
+        setAlertData({ action: "", status: undefined, name: "" });
+      }, 3000);
     }
   }, [deletedUser]);
 
@@ -140,7 +147,8 @@ const UsersView = () => {
       setTimeout(() => {
         setSnackbarOpen(false);
         dispatch(setUpdatedUser({ status: undefined, ebsiDID: "" }));
-      }, 6000);
+        setAlertData({ action: "", status: undefined, name: "" });
+      }, 3000);
     }
   }, [updatedUser]);
 
@@ -153,7 +161,7 @@ const UsersView = () => {
           <UsersTable
             setIsCreating={setIsCreating}
             openManageModal={() => setIsManageModalOpened(true)}
-            openUser={updateOpenedUser}
+            openUser={triggerOpenUser}
           />
         </Paper>
       )}

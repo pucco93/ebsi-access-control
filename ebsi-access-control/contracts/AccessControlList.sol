@@ -17,19 +17,43 @@ contract AccessControlList is IAccessControlList, Utilities {
         string calldata _ebsiDID,
         bytes32 _resourceID,
         bytes32 _permission
-    ) external view override returns (bool) {
+    ) external override returns (bool) {
         Role storage _userRole = userResourceToRoleData[
             createResourceToRoleHash(_ebsiDID, _resourceID)
         ];
-        bool hasPermission = false;
-        if (_userRole.permissions.length > 0) {
-            for (uint256 i = 0; i <= _userRole.permissions.length; i++) {
+        uint256 permissionsArrLength = _userRole.permissions.length;
+        if (permissionsArrLength > 0) {
+            for (uint256 i = 0; i <= permissionsArrLength; i++) {
                 if (_userRole.permissions[i] == _permission) {
-                    hasPermission = true;
+                    return true;
                 }
             }
         }
-        return hasPermission;
+
+        emit PermissionDenied("User does not have enough permission to complete the action!");
+        return false;
+    }
+
+    function userNotInBlacklist(string calldata ebsiDID, bytes32 resourceName) external view returns (bool) {
+        Resource storage resource = resourceIDToResourceData[resourceName];
+        if(resource.blacklist.length == 0) {
+            return true;
+        }
+        for(uint i = 0; i < resource.blacklist.length; i++) {
+            if(compareStrings(resource.blacklist[i], ebsiDID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function userHasAlreadyAccount() public view returns (bool) {
+        bytes memory ebsiDIDRetrieved = bytes(addressesToEbsiDID[msg.sender]);
+        if (ebsiDIDRetrieved.length == 0) {
+            return false;
+        }
+
+        return true;
     }
 
     // Check if user has already been created, using an ebsiDID and cycling through the entire list of created users (only ebsiDID must be stored)
@@ -45,21 +69,24 @@ contract AccessControlList is IAccessControlList, Utilities {
 
     // Passing a name will create a new resource - passing name to keccak to have a uniqueID, the struct also have a blacklist
     function createUser(
-        string calldata ebsiDID,
-        bytes32[] calldata resourcesNames
+        string calldata ebsiDID
     ) external override returns (User memory user) {
+        require(!this.userHasAlreadyAccount());
         require(!this.isUserAlreadyCreated(ebsiDID, false));
         users[ebsiDID] = User(
             ebsiDID,
-            resourcesNames,
+            new bytes32[](0),
             block.timestamp,
             block.timestamp,
             0
         );
+        // Assign new ebsiDID to the value reached using his own address
+        // This means I'm creating my account
+        addressesToEbsiDID[msg.sender] = ebsiDID;
         usersArray.push(ebsiDID);
         existingUsers[ebsiDID] = true;
 
-        emit UserUpdated('creation', ebsiDID, block.timestamp, '');
+        emit UserUpdated("creation", ebsiDID, block.timestamp, "");
         return users[ebsiDID];
     }
 
@@ -68,14 +95,23 @@ contract AccessControlList is IAccessControlList, Utilities {
         string calldata ebsiDID,
         string[] memory newUsersArray
     ) external override returns (bool removed) {
+        string memory ebsiDIDSender = this.getEbsiDID(msg.sender);
+        require(compareStrings(ebsiDID, ebsiDIDSender));
         usersArray = newUsersArray;
+        delete addressesToEbsiDID[msg.sender];
         existingUsers[ebsiDID] = false;
-        emit UserUpdated('deletion', ebsiDID, block.timestamp, '');
+        emit UserUpdated("deletion", ebsiDID, block.timestamp, "");
         return true;
     }
 
     // Get all ebsiDIDs without relative users data
-    function getAllEbsiDIDs() external virtual view override returns (string[] memory ebsiDIDs) {
+    function getAllEbsiDIDs()
+        external
+        view
+        virtual
+        override
+        returns (string[] memory ebsiDIDs)
+    {
         return usersArray;
     }
 
@@ -122,30 +158,30 @@ contract AccessControlList is IAccessControlList, Utilities {
         return tempUsers;
     }
 
-    // Check if a user is already in blacklist
-    function isUserAlreadyInBlacklist(
+    function updateUserResources(
+        string calldata requester,
         string calldata ebsiDID,
-        Resource storage resource
-    ) internal returns (bool) {
-        bool isAlreadyBlacklisted = blacklistMapping[
-            Utilities.createStringHashFrom2Args(ebsiDID, resource.name)
-        ];
-        if (isAlreadyBlacklisted) {
-            emit CustomError("User already in blacklist!");
-        }
-        return isAlreadyBlacklisted;
-    }
-
-    function updateUserResources(string calldata ebsiDID, bytes32[] calldata newResourcesNames, bytes32 resourceName, Role memory role, string calldata action) external override {
+        bytes32[] calldata newResourcesNames,
+        bytes32 resourceName,
+        Role memory role,
+        string calldata action
+    ) external override {
+        bytes32 permission = compareStrings(string(action), string('creation'))
+            ? Data.grant
+            : Data.revoke;
+        require(this.checkPermission(requester, resourceName, permission));
+        require(this.userNotInBlacklist(ebsiDID, resourceName));
         users[ebsiDID].resourcesHashes = newResourcesNames;
-        if (compareStrings(action, "creation")) {
+        if (compareStrings(string(action), string('creation'))) {
             userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourceName)] = role;
         } else {
             delete userResourceToRoleData[createResourceToRoleHash(ebsiDID, resourceName)];
         }
 
         emit UserUpdated(
-            compareStrings(action, "creation") ? 'updated-resource-added' : 'updated-resource-removed',
+            compareStrings(string(action), string('creation'))
+                ? "updated-resource-added"
+                : "updated-resource-removed",
             ebsiDID,
             block.timestamp,
             resourceName
@@ -156,8 +192,12 @@ contract AccessControlList is IAccessControlList, Utilities {
     // Get a resource by passing its ID
     function getResource(
         bytes32 resourceHash
-    ) external view override returns (Resource memory) {
-        return resourceIDToResourceData[resourceHash];
+    ) external override returns (Resource memory) {
+        if(this.checkPermission(addressesToEbsiDID[msg.sender], resourceHash, Data.read)) {
+            return resourceIDToResourceData[resourceHash];
+        }
+
+        return Resource(bytes32(''), new string[](0));
     }
 
     // Check if a resource has already been created and if so it will return that resource
@@ -172,9 +212,15 @@ contract AccessControlList is IAccessControlList, Utilities {
 
     // Create a resource passing a name
     function createResource(
+        string calldata requester,
         bytes32 name
-        // string calldata ebsiDID
-    ) external override returns (bytes32 resourceHash) {
+    )
+        external
+        override
+        returns (
+            bytes32 resourceHash
+        )
+    {
         require(
             !this.isResourceAlreadyCreated(name),
             "Resource already existing with this name!"
@@ -185,21 +231,25 @@ contract AccessControlList is IAccessControlList, Utilities {
         });
         existingResources[name] = true;
         createdResourcesArray.push(name);
+        users[requester].resourcesHashes.push(name);
+        userResourceToRoleData[Utilities.createResourceToRoleHash(requester, name)] = roles[bytes32('admin')];
 
-        emit ResourceUpdated("creation", name, block.timestamp, "", false);
+        emit ResourceUpdated("creation", name, block.timestamp);
         return name;
     }
 
     // Here you cannot remove the resource from each user during this function because it could run out of gas
     // Then at the next user edit, the resource will be removed from him
     function deleteResource(
+        string calldata requester, 
         bytes32 name,
         bytes32[] memory newCreatedResourcesArray
     ) external override {
+        require(this.checkPermission(requester, name, Data.deletePermission));
         createdResourcesArray = newCreatedResourcesArray;
         existingResources[name] = false;
         delete resourceIDToResourceData[name];
-        emit ResourceUpdated("deletion", name, block.timestamp, "", false);
+        emit ResourceUpdated("deletion", name, block.timestamp);
     }
 
     function getAllResourcesInBytes32()
@@ -214,40 +264,22 @@ contract AccessControlList is IAccessControlList, Utilities {
     // Get all the resources createcd - cycling through the entire list of UIDs
     function getAllResources()
         external
-        view
         override
         returns (Resource[] memory)
     {
         Resource[] memory tempResources = new Resource[](
             createdResourcesArray.length
         );
+        string storage requester = addressesToEbsiDID[msg.sender];
         uint tempResourcesCounter = 0;
         if (createdResourcesArray.length > 0) {
             for (uint256 i = 0; i < createdResourcesArray.length; i++) {
-                tempResources[tempResourcesCounter] = resourceIDToResourceData[
-                    createdResourcesArray[i]
-                ];
-                tempResourcesCounter++;
-            }
-        }
-        return tempResources;
-    }
-
-    // Get all user resources
-    function getAllUserResources(
-        string calldata ebsiDID
-    ) external view override returns (Resource[] memory) {
-        uint tempResourcesCounter = 0;
-        bytes32[] memory resourcesHashes = users[ebsiDID].resourcesHashes;
-        Resource[] memory tempResources = new Resource[](
-            resourcesHashes.length
-        );
-        if (resourcesHashes.length > 0) {
-            for (uint256 i = 0; i < resourcesHashes.length; i++) {
-                tempResources[tempResourcesCounter] = resourceIDToResourceData[
-                    resourcesHashes[i]
-                ];
-                tempResourcesCounter++;
+                Resource storage resource  = resourceIDToResourceData[createdResourcesArray[i]];
+                bool hasPermission = this.checkPermission(requester, resource.name, bytes32('read'));
+                if (hasPermission) {
+                    tempResources[tempResourcesCounter] = resource;
+                    tempResourcesCounter++;
+                }
             }
         }
         return tempResources;
@@ -257,65 +289,30 @@ contract AccessControlList is IAccessControlList, Utilities {
     function getAllUsersInBlacklist(
         string calldata ebsiDID,
         bytes32 resourceHash
-    ) external view override returns (string[] memory tempUsers) {
+    ) external override returns (string[] memory tempUsers) {
         require(this.checkPermission(ebsiDID, resourceHash, Data.read));
 
         return resourceIDToResourceData[resourceHash].blacklist;
     }
 
     // Add a user to a resource's blacklist
-    function addUserToBlackList(
+    function updateResourceBlackList(
         string calldata requester,
-        string calldata ebsiDID,
-        bytes32 resourceUID
+        bytes32 resource,
+        string[] calldata newBlacklist
     ) external override {
         require(
-            this.checkPermission(requester, resourceUID, Data.edit),
+            this.checkPermission(requester, resource, Data.edit),
             "User does not have enough permission to do this action."
         );
-        require(this.isUserAlreadyCreated(ebsiDID, true));
-        Resource storage resource = resourceIDToResourceData[resourceUID];
-        require(isUserAlreadyInBlacklist(ebsiDID, resource));
-        
-        resource.blacklist.push(ebsiDID);
-        blacklistMapping[
-            Utilities.createStringHashFrom2Args(ebsiDID, resourceUID)
-        ] = true;
-        bytes32 resourceName = resource.name;
+        Resource memory newResource = resourceIDToResourceData[resource];
+        newResource.blacklist = newBlacklist;
+        resourceIDToResourceData[resource] = newResource;
 
         emit ResourceUpdated(
-            "blacklist-user-added",
-            resourceName,
-            block.timestamp,
-            ebsiDID,
-            true
-        );
-    }
-
-    // Remove a user from a resource's blacklist
-    function removeUserFromBlacklist(
-        string calldata requester,
-        string calldata ebsiDID,
-        bytes32 resourceUID,
-        string[] memory newBlacklist
-    ) external override {
-        require(
-            this.checkPermission(requester, resourceUID, Data.edit),
-            "User does not have enough permission to do this action."
-        );
-        require(this.isUserAlreadyCreated(ebsiDID, true));
-        Resource storage resource = resourceIDToResourceData[resourceUID];
-        resource.blacklist = newBlacklist;
-        blacklistMapping[
-            Utilities.createStringHashFrom2Args(ebsiDID, resourceUID)
-        ] = false;
-        bytes32 resourceName = resourceIDToResourceData[resourceUID].name;
-        emit ResourceUpdated(
-            "blacklist-user-removed",
-            resourceName,
-            block.timestamp,
-            ebsiDID,
-            false
+            "blacklist-updated",
+            resource,
+            block.timestamp
         );
     }
 
@@ -347,77 +344,11 @@ contract AccessControlList is IAccessControlList, Utilities {
         return roles[roleID];
     }
 
-    // Only callable from who has grant permission - It shows before which role user have and ask for permission before submitting this request
-    function assignRole(
-        string calldata requester,
-        string calldata ebsiDID,
-        bytes32 resourceUID,
-        Role calldata role
-    ) external override {
-        require(
-            this.checkPermission(requester, resourceUID, Data.grant),
-            "User does not have enough permissions to do this action."
-        );
-
-        User memory user = users[ebsiDID];
-        int256 resourceIndex = -1;
-        for (uint256 i = 0; i < user.resourcesHashes.length; i++) {
-            if (resourceUID == user.resourcesHashes[i]) {
-                resourceIndex = int256(i);
-            }
-        }
-        if (resourceIndex >= 0) {
-            // Need to use this instead of the variable because here it's needed to assign the new value to the storage variable
-            users[ebsiDID].resourcesHashes.push(resourceUID);
-        }
-
-        // Not finding a way to limit a bug where an user can revoke a role to a resource by simply assigning a role with less permissions
-        userResourceToRoleData[
-            createResourceToRoleHash(ebsiDID, resourceUID)
-        ] = role;
-    }
-
-    // Only callable from who has revoke permissions
-    function revokeRole(
-        string calldata requester,
-        string calldata ebsiDID,
-        bytes32 resourceUID
-    ) external override {
-        require(
-            this.checkPermission(requester, resourceUID, Data.revoke),
-            "User does not have enough permissions to do this action."
-        );
-        User memory user = users[ebsiDID];
-        if (user.resourcesHashes.length > 0) {
-            int256 resourceIndex = -1;
-            for (uint256 i = 0; i < user.resourcesHashes.length; i++) {
-                if (resourceUID == user.resourcesHashes[i]) {
-                    resourceIndex = int256(i);
-                }
-            }
-            if (resourceIndex >= 0) {
-                for (
-                    uint256 j = uint256(resourceIndex);
-                    j < user.resourcesHashes.length;
-                    j++
-                ) {
-                    users[ebsiDID].resourcesHashes[j] = users[ebsiDID]
-                        .resourcesHashes[j + 1];
-                }
-                users[ebsiDID].resourcesHashes.pop();
-            }
-            // Need to use this instead of the variable because here it's needed to assign the new value to the storage variable
-            delete userResourceToRoleData[
-                createResourceToRoleHash(ebsiDID, resourceUID)
-            ];
-        }
-    }
-
     // Check whether the role has been already created
     function isRoleAlreadyCreated(
         bytes32 roleName
     ) external override returns (bool) {
-        if(existingRoles[roleName]) {
+        if (existingRoles[roleName]) {
             emit CustomError("Role already exists!");
         }
         return existingRoles[roleName];
@@ -447,17 +378,16 @@ contract AccessControlList is IAccessControlList, Utilities {
         bytes32[] memory newCreatedRolesArray,
         bytes32 roleName
     ) external override {
-        if(roles[roleName].isCustom) {
-            Role memory oldRole = Role({
-                name: roleName,
-                permissions: new bytes32[](0),
-                isCustom: true
-            });
-            createdRolesArray = newCreatedRolesArray;
-            existingRoles[roleName] = false;
-            delete roles[roleName];
-            emit UpdatedRole("deletion", oldRole, block.timestamp);
-        }
+        require(roles[roleName].isCustom);
+        Role memory oldRole = Role({
+            name: roleName,
+            permissions: new bytes32[](0),
+            isCustom: true
+        });
+        createdRolesArray = newCreatedRolesArray;
+        existingRoles[roleName] = false;
+        delete roles[roleName];
+        emit UpdatedRole("deletion", oldRole, block.timestamp);
     }
 
     // Returns the entire created permissions array in bytes32 for internal purpouse
@@ -504,7 +434,7 @@ contract AccessControlList is IAccessControlList, Utilities {
     function isPermissionAlreadyCreated(
         bytes32 permissionName
     ) external override returns (bool) {
-        if(existingPermissions[permissionName]) {
+        if (existingPermissions[permissionName]) {
             emit CustomError("Permission already exists!");
         }
         return existingPermissions[permissionName];
@@ -541,6 +471,7 @@ contract AccessControlList is IAccessControlList, Utilities {
         bytes32[] calldata newCreatedPermissionsArray,
         bytes32 name
     ) external override {
+        require(permissionIDToPermissionData[name].isCustom);
         PermissionStruct memory oldPermission = PermissionStruct({
             permission: name,
             isCustom: true

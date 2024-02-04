@@ -7,7 +7,7 @@ import {
   ListItem,
   MenuItem,
   Select,
-  SelectChangeEvent,
+  SelectChangeEvent
 } from "@mui/material";
 import ResourceRole from "../../../models/ResourceRole";
 import { useSelector } from "react-redux";
@@ -38,8 +38,10 @@ const ResourceRoleSelector = (props: IResourceRoleProps) => {
   const onResourceChange = useCallback(
     (newValue: string, index: number) => {
       if (newValue) {
-        const newBlock = blocks[index];
-        newBlock.resourceName = newValue;
+        const newBlock: ResourceRole = {
+          ...blocks[index],
+          resourceName: newValue
+        };
         const newBlockList = [
           ...blocks.slice(0, index),
           newBlock,
@@ -56,8 +58,10 @@ const ResourceRoleSelector = (props: IResourceRoleProps) => {
       if (newValue) {
         const newRole = roles.find((role) => role.name === newValue);
         if (newRole?.name) {
-          const newBlock = blocks[index];
-          newBlock.role = newRole;
+          const newBlock: ResourceRole = {
+            ...blocks[index],
+            role: newRole
+          };
           const newBlockList = [
             ...blocks.slice(0, index),
             newBlock,
@@ -71,13 +75,13 @@ const ResourceRoleSelector = (props: IResourceRoleProps) => {
   );
 
   const triggerAddItem = useCallback(() => {
-    const newResourceRole = {
+    const newResourceRole: ResourceRole = {
       resourceName: "",
       role: {
         name: "",
         permissions: [],
         isCustom: false,
-      },
+      }
     };
     addResourceRole([...blocks, newResourceRole]);
   }, [addResourceRole, blocks]);

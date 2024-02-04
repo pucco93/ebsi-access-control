@@ -25,8 +25,9 @@ import { GENERAL } from "../constants/Constants";
 import Loader from "./reusables/Loader/Loader";
 import HeaderPaper from './HeaderPaper/HeaderPaper';
 import { requestEbsiDID } from "../contracts_connections/Users";
-import { listenForCustomErrors } from "../contracts_connections/Account";
+import { listenForCustomErrors, listenForPermissionError } from "../contracts_connections/Account";
 import CustomErrorAlertComponent from "./reusables/CustomErrorAlertComponent/CustomErrorsAlertComponent";
+import PermissionDeniedErrorAlertComponent from "./reusables/PermissionDeniedErrorAlertComponent/PermissionDeniedErrorAlertComponent";
 
 const views: any = {
   users: { title: "Users", component: <UsersView />, icon: <GroupIcon /> },
@@ -62,6 +63,7 @@ const MainView = (props: any) => {
   
   useEffect(() => {
     listenForCustomErrors();
+    listenForPermissionError();
   }, []);
 
   return (
@@ -97,6 +99,7 @@ const MainView = (props: any) => {
       <Loader show={isLoading} msg={msg} />
       <AlertComponent />
       <CustomErrorAlertComponent />
+      <PermissionDeniedErrorAlertComponent />
     </Box>
   );
 };

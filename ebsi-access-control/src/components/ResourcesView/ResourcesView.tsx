@@ -8,13 +8,14 @@ import {
   Typography,
 } from "@mui/material";
 import Actions from "../reusables/Actions/Actions";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import AccessControlListType from "../../store/accessControlListType";
 import { useEffect, useState } from "react";
 import { ROLES } from "../../constants/Constants";
 import {
   setCreatedResource,
   setDeletedResource,
+  setUpdatedResource,
 } from "../../store/accessControlListStore";
 import {
   listenForResources,
@@ -26,6 +27,7 @@ import {
   getDeletedResource,
   getLoader,
   getResources,
+  getUpdatedResource,
 } from "../../store/accessControlListSelectors";
 import styles from "./Resources.module.css";
 import ResourceCreationModal from "./ResourceCreationModal";
@@ -60,6 +62,10 @@ const ResourcesView = () => {
     (state: { accessControlList: AccessControlListType }) =>
       getDeletedResource(state)
   );
+  const updatedResource = useSelector(
+    (state: { accessControlList: AccessControlListType }) =>
+      getUpdatedResource(state)
+  );
   const [isOpen, setOpen] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [openSnackbar, setSnackbarOpen] = useState<boolean>(false);
@@ -72,6 +78,7 @@ const ResourcesView = () => {
     name: "",
     status: undefined,
   });
+  const dispatch = useDispatch();
   const isLoading = show && typeof dataType === ROLES;
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -85,7 +92,7 @@ const ResourcesView = () => {
 
   useEffect(() => {
     setIsCreating(false);
-    if (createdResource) {
+    if (createdResource?.resource) {
       setSnackbarOpen(true);
       handleClose();
       setAlertData({
@@ -95,14 +102,19 @@ const ResourcesView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setCreatedResource({ status: undefined, resource: null });
-      }, 6000);
+        dispatch(setCreatedResource({ status: undefined, resource: null }));
+        setAlertData({
+          action: "",
+          name: "",
+          status: undefined
+        });
+      }, 3000);
     }
   }, [createdResource]);
 
   useEffect(() => {
     setIsCreating(false);
-    if (deletedResource) {
+    if (deletedResource?.resource) {
       setSnackbarOpen(true);
       handleClose();
       setAlertData({
@@ -112,10 +124,37 @@ const ResourcesView = () => {
       });
       setTimeout(() => {
         setSnackbarOpen(false);
-        setDeletedResource({ status: undefined, resource: null });
-      }, 6000);
+        dispatch(setDeletedResource({ status: undefined, resource: null }));
+        setAlertData({
+          action: "",
+          name: "",
+          status: undefined
+        });
+      }, 3000);
     }
   }, [deletedResource]);
+
+  useEffect(() => {
+    setIsCreating(false);
+    if (updatedResource?.resource) {
+      setSnackbarOpen(true);
+      handleClose();
+      setAlertData({
+        action: "updated",
+        name: updatedResource.resource?.name || "",
+        status: updatedResource.status,
+      });
+      setTimeout(() => {
+        setSnackbarOpen(false);
+        dispatch(setUpdatedResource({ status: undefined, resource: null }));
+        setAlertData({
+          action: "",
+          name: "",
+          status: undefined
+        });
+      }, 3000);
+    }
+  }, [updatedResource]);
 
   return (
     <Box>

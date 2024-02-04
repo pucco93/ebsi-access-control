@@ -6,18 +6,21 @@ import {
   FormControl,
   FormGroup,
   FormLabel,
+  IconButton,
+  InputAdornment,
   List,
   ListItem,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemIcon,
   ListItemText,
+  OutlinedInput,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import styles from "./Resources.module.css";
-import { Add, Remove } from "@mui/icons-material";
-import { useState } from "react";
-import { triggerAddUserToBlacklist } from "../../contracts_connections/Resources";
+import { AccountCircle, Add, Delete } from "@mui/icons-material";
+import { useEffect, useMemo, useState } from "react";
+import {
+  requestUpdateBlacklist,
+} from "../../contracts_connections/Resources";
 
 export interface IResourceDetailModalProps {
   resource: Resource | null;
@@ -27,35 +30,55 @@ export interface IResourceDetailModalProps {
 const ResourceDetailModal = (props: IResourceDetailModalProps) => {
   const { resource, closeModal } = props;
   const isOpen = !!resource;
-  const blacklistedUsers = resource?.blacklist || [];
-  const [isBlacklistTextFieldOpen, openBlacklistTextField] =
-    useState<boolean>(false);
-  const [errorEbsiDID, updateErrorEbsiDID] = useState<boolean>(false);
-  const [ebsiDIDToAdd, updateEbsiDIDToAdd] = useState<string>("");
+  const blacklistedUsers = useMemo(() => resource?.blacklist || [], [resource?.blacklist]);
+  const [blacklist, updateBlacklist] = useState<string[]>([...blacklistedUsers]);
+  const [newBlacklistedUser, updateNewBlacklistedUser] = useState<string>("");
   const [isRemoving, updateIsRemoving] = useState<boolean>(false);
 
-  const triggerOpenAddUserToBlacklist = () => {
-    updateIsRemoving(false);
-    openBlacklistTextField(true);
-  };
-
-  const triggerOpenRemoveUserFromBlacklist = () => {
-    updateIsRemoving(true);
-    openBlacklistTextField(true);
-  };
-
-  const triggerUpdateEbsiDID = (newValue: string) => {
-    if (newValue) {
-      updateErrorEbsiDID(false);
-      updateEbsiDIDToAdd(newValue);
-    } else {
-      updateErrorEbsiDID(true);
+  const triggerAddUserToBlacklist = () => {
+    if (!blacklist.some((user: string) => user === newBlacklistedUser)) {
+      const newBlacklist = [...blacklist, newBlacklistedUser];
+      updateBlacklist(newBlacklist);
+      updateNewBlacklistedUser("");
     }
   };
 
-  const triggerSubmitNewBlacklist = () => {
-    triggerAddUserToBlacklist(ebsiDIDToAdd);
+  const triggerUpdateEbsiDID = (newValue: string) => {
+    updateNewBlacklistedUser(newValue);
   };
+
+  const triggerRemoveUserFromBlacklist = (user: string) => {
+    const newBlacklist = [
+      ...blacklist?.filter(
+        (blacklistedUser: string) => blacklistedUser !== user
+      ),
+    ];
+    updateBlacklist(newBlacklist);
+  };
+
+  const triggerCloseModal = () => {
+    updateBlacklist([]);
+    closeModal();
+  };
+
+  const triggerSubmitNewBlacklist = async () => {
+    if (resource?.name) {
+      updateIsRemoving(true);
+      triggerCloseModal();
+      await requestUpdateBlacklist(resource.name, blacklist);
+      updateIsRemoving(false);
+    }
+  };
+
+  // useEffect(() => {
+  //   if (resource?.name) {
+  //     requestBlacklist(resource?.name);
+  //   }
+  // }, [resource]);
+
+  useEffect(() => {
+    updateBlacklist([...blacklistedUsers]);
+  }, [blacklistedUsers])
 
   return (
     <Dialog
@@ -64,7 +87,7 @@ const ResourceDetailModal = (props: IResourceDetailModalProps) => {
       open={isOpen}
       keepMounted
       closeAfterTransition
-      onClose={closeModal}
+      onClose={triggerCloseModal}
     >
       <DialogTitle>{resource?.name} details</DialogTitle>
       <DialogContent>
@@ -75,7 +98,7 @@ const ResourceDetailModal = (props: IResourceDetailModalProps) => {
               className={styles.textInput}
               value={resource?.name}
               InputProps={{
-                readOnly: true
+                readOnly: true,
               }}
               variant="outlined"
             />
@@ -84,45 +107,52 @@ const ResourceDetailModal = (props: IResourceDetailModalProps) => {
           <FormControl fullWidth>
             <FormLabel>Blacklist</FormLabel>
             <List>
-              {blacklistedUsers.map((user: string) => (
-                <ListItem>
-                  <ListItemAvatar></ListItemAvatar>
-                  <ListItemText>{user}</ListItemText>
+              {blacklist.map((user: string) => (
+                <ListItem key={user}>
+                  <AccountCircle className={styles.avatarIcon} />
+                  <Tooltip title={user}>
+                    <ListItemText className={styles.ebsiDIDContainer}>{user}</ListItemText>
+                  </Tooltip>
+                  <IconButton
+                    onClick={() => triggerRemoveUserFromBlacklist(user)}
+                    color="error"
+                    aria-label="Delete"
+                    style={{ marginLeft: 10 }}
+                  >
+                    <Delete />
+                  </IconButton>
                 </ListItem>
               ))}
-              <ListItemButton onClick={triggerOpenAddUserToBlacklist}>
-                <ListItemIcon>
-                  <Add />
-                </ListItemIcon>
-                <ListItemText>Add user to blacklist</ListItemText>
-              </ListItemButton>
-              <ListItemButton onClick={triggerOpenRemoveUserFromBlacklist}>
-                <ListItemIcon>
-                  <Remove />
-                </ListItemIcon>
-                <ListItemText>Remove user from blacklist</ListItemText>
-              </ListItemButton>
-            </List>
-          </FormControl>
 
-          {isBlacklistTextFieldOpen && (
-            <FormControl fullWidth>
-              <FormLabel>{isRemoving ? "User to be removed" : "New user in blacklist"}</FormLabel>
-              <TextField
+              <FormLabel>New user in blacklist</FormLabel>
+              <OutlinedInput
                 autoFocus={true}
-                error={errorEbsiDID}
-                helperText="Insert user ebsiDID here"
                 required
                 onChange={(event) => triggerUpdateEbsiDID(event?.target?.value)}
                 className={styles.textInput}
-                variant="outlined"
+                value={newBlacklistedUser}
+                multiline
+                maxRows={4}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      disabled={!newBlacklistedUser}
+                      aria-label="add user to blacklist"
+                      onClick={triggerAddUserToBlacklist}
+                      edge="end"
+                    >
+                      <Add />
+                    </IconButton>
+                  </InputAdornment>
+                }
               />
-            </FormControl>
-          )}
+            </List>
+          </FormControl>
 
           <Button
+            disabled={isRemoving}
             variant="contained"
-            onSubmit={triggerSubmitNewBlacklist}
+            onClick={triggerSubmitNewBlacklist}
           >
             Edit
           </Button>

@@ -3,13 +3,17 @@
   padding: 30px 0px;
 }
 
+.dialog {
+  width: 450px !important;
+}
+
 .modalTitle {
   margin-bottom: 20px!important;
 }
 
 .textInput {
   margin-bottom: 20px!important;
-  width: 420px!important;
+  width: 100% !important;
 }
 
 .currentUserControl {
@@ -39,4 +43,30 @@
 
 .clickableRow {
   cursor: pointer;
+}
+
+.avatarIcon {
+  margin-right: 10px !important;
+}
+
+.ebsiDIDContainer {
+  width: 300px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chipsContainerCell {
+  width: 400px;
+}
+
+.chipsContainerStack {
+  justify-content: flex-end !important;
+}
+
+.chipText { 
+  width: 200px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -1,6 +1,7 @@
 import User from "../models/User";
 import { DATA_TYPE } from "../models/BaseTypes";
 import { AlertColor } from "@mui/material";
+import ResourceRole from "../models/ResourceRole";
 
 type AccessControlListType = {
     alert: {
@@ -9,6 +10,10 @@ type AccessControlListType = {
         color: string
     },
     customErrorsAlert: {
+        show: boolean,
+        msg: string
+    },
+    permissionDeniedErrorsAlert: {
         show: boolean,
         msg: string
     },
@@ -31,11 +36,14 @@ type AccessControlListType = {
     deletedRole: { status: AlertColor | undefined, role: Role | null } | null,
     resources: Resource[],
     resourcesHashes: string[],
-    createdResource: { status: AlertColor | undefined, resource: Role | null } | null,
-    deletedResource: { status: AlertColor | undefined, resource: Role | null } | null,
+    createdResource: { status: AlertColor | undefined, resource: Resource | null } | null,
+    deletedResource: { status: AlertColor | undefined, resource: Resource | null } | null,
+    updatedResource: { status: AlertColor | undefined, resource: Resource | null } | null,
+    blacklistUsers: string[],
     createdUser: { status: AlertColor | undefined, ebsiDID: string } | null,
     deletedUser: { status: AlertColor | undefined, ebsiDID: string } | null,
-    updatedUser: { status: AlertColor | undefined, ebsiDID: string } | null
+    updatedUser: { status: AlertColor | undefined, ebsiDID: string } | null,
+    currentUserInView: { user: string, resourceRoles: ResourceRole[] | null }
 };
 
 export default AccessControlListType;

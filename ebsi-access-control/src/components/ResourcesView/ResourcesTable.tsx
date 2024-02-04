@@ -1,13 +1,16 @@
 import {
   Button,
+  Chip,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TablePagination,
-  TableRow
+  TableRow,
+  Tooltip
 } from "@mui/material";
 import { useSelector } from "react-redux";
 import AccessControlListType from "../../store/accessControlListType";
@@ -73,21 +76,44 @@ const ResourcesTable = (props: IResourcesTableProps) => {
           <TableHead>
             <TableRow>
               <TableCell align="left">Name</TableCell>
-              <TableCell align="left">Blacklist</TableCell>
-              <TableCell align="left">Actions</TableCell>
+              <TableCell align="right">Blacklist</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {visibleResources.map((resource: any, index: number) => (
               <TableRow
                 key={index}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 }}}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                 onClick={() => openResourceDetails(resource)}
                 className={styles.clickableRow}
               >
                 <TableCell align="left">{resource.name}</TableCell>
-                <TableCell align="left">{resource.blacklist?.map((user: string) => user).join(', ') || "No blacklisted user."}</TableCell>
-                <TableCell align="left">
+                <TableCell className={styles.chipsContainerCell} align="right">
+                  {resource?.blacklist?.length > 0 ? (
+                    <Stack
+                      className={styles.chipsContainerStack}
+                      direction="row"
+                      spacing={1}
+                    >
+                      {(resource.blacklist.length > 2
+                        ? resource.blacklist.slice(0, 2)
+                        : resource.blacklist
+                      )?.map((user: string) => (
+                        <Tooltip key={user} title={user}>
+                          <Chip
+                            className={styles.chipText}
+                            key={user}
+                            label={user}
+                          ></Chip>
+                        </Tooltip>
+                      ))}
+                    </Stack>
+                  ) : (
+                    "No blacklisted user."
+                  )}
+                </TableCell>
+                <TableCell align="right">
                   <Button
                     onClick={(event) => triggerDeleteRow(event, resource)}
                     startIcon={<Close />}

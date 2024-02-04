@@ -115,6 +115,8 @@ const UserCreationModal = (props: IUserCreationModalProps) => {
 
   const triggerUsePersonalPublicKey = () => {
     setIsPrivateKeySaved(false);
+    setPrivateKey("");
+    triggerUpdateForm({}, "publicKey");
     setIsPublicKeyFromUser(!isPublicKeyFromUser);
   };
 
@@ -248,13 +250,16 @@ const UserCreationModal = (props: IUserCreationModalProps) => {
             />
 
             <Tooltip placement="top" title="Copy the private key first!">
-              <Button
-                disabled={isCreating || !isPrivateKeySaved}
-                variant="contained"
-                onClick={triggerCreateUser}
-              >
-                Create
-              </Button>
+              <div>
+                <Button
+                  style={{width: '100%'}}
+                  disabled={isCreating || !isPrivateKeySaved}
+                  variant="contained"
+                  onClick={triggerCreateUser}
+                >
+                  Create
+                </Button>
+              </div>
             </Tooltip>
           </FormGroup>
         </form>

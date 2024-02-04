@@ -50,10 +50,11 @@ export const listenForPermissions = () => {
 };
 
 export const requestPermissionsHashes = async () => {
+  const { connectedAccount } = store.getState().accessControlList || {};
 
   try {
     if (contract) {
-      const response: any = await contract?.methods.getAllPermissionsInBytes32().call();
+      const response: any = await contract?.methods.getAllPermissionsInBytes32().call({ from: connectedAccount });
       store.dispatch(setPermissionsHashes(response));
       return;
     }
@@ -65,10 +66,11 @@ export const requestPermissionsHashes = async () => {
 };
 
 export const requestPermissions = async () => {
+  const { connectedAccount } = store.getState().accessControlList || {};
 
   try {
     if (contract) {
-      const response: any = await contract?.methods.getAllAvailablePermissions().call();
+      const response: any = await contract?.methods.getAllAvailablePermissions().call({ from: connectedAccount });
       const formattedPermissions = formatPermissions(response);
       store.dispatch(setPermissions(formattedPermissions));
       return;
@@ -81,10 +83,12 @@ export const requestPermissions = async () => {
 };
 
 export const requestPermission = async (permissionName: string) => {
+  const { connectedAccount } = store.getState().accessControlList || {};
+  
   try {
     if (contract) {
       const permissionID = fromStringToBytes32(permissionName);
-      const response = await contract?.methods.getPermission(permissionID).call();
+      const response = await contract?.methods.getPermission(permissionID).call({ from: connectedAccount });
       const permissionsResults = response?.permission !== INVALID_BYTES_32 ? [formatPermission(response)] : []
       store.dispatch(setPermissions(permissionsResults));
       return;

@@ -6,6 +6,7 @@ const initialState: AccessControlListType = {
     // ALERTS
     alert: { show: false, msg: "", color: "" },
     customErrorsAlert: { show: false, msg: "" },
+    permissionDeniedErrorsAlert: { show: false, msg: "" },
     // LOADERS
     loader: { dataType: null, show: false, msg: "" },
     // GENERAL
@@ -17,6 +18,10 @@ const initialState: AccessControlListType = {
     createdUser: null,
     deletedUser: null,
     updatedUser: null,
+    currentUserInView: {
+        user: '',
+        resourceRoles: null
+    },
     // PERMIISSIONS
     permissionsHashes: [],
     permissions: [],
@@ -31,7 +36,9 @@ const initialState: AccessControlListType = {
     resources: [],
     resourcesHashes: [],
     createdResource: null,
-    deletedResource: null
+    deletedResource: null,
+    updatedResource: null,
+    blacklistUsers: []
 };
 
 export const accessControlListSlice = createSlice({
@@ -65,6 +72,20 @@ export const accessControlListSlice = createSlice({
         deleteCustomErrorsAlert: (state) => ({
             ...state,
             customErrorAlert: {
+                msg: "",
+                show: false
+            }
+        }),
+        createPermissionDeniedErrorsAlert: (state, { payload: { msg } }) => ({
+            ...state,
+            permissionDeniedErrorAlert: {
+                msg,
+                show: true
+            }
+        }),
+        deletePermissionDeniedErrorsAlert: (state) => ({
+            ...state,
+            permissionDeniedErrorAlert: {
                 msg: "",
                 show: false
             }
@@ -123,6 +144,10 @@ export const accessControlListSlice = createSlice({
             ...state,
             updatedUser: payload
         }),
+        setCurrentUserInView: (state, { payload }) => ({
+            ...state,
+            currentUserInView: payload
+        }),
         // PERMISSIONS
         setPermissionsHashes: (state, { payload }) => ({
             ...state,
@@ -174,6 +199,14 @@ export const accessControlListSlice = createSlice({
             ...state,
             deletedResource: payload
         }),
+        setUpdatedResource: (state, { payload }) => ({
+            ...state,
+            updatedResource: payload
+        }),
+        setBlacklistUsers: (state, { payload }) => ({
+            ...state,
+            blacklistUsers: payload
+        })
     }
 });
 
@@ -182,6 +215,8 @@ export const {
     deleteAlert,
     createCustomErrorsAlert,
     deleteCustomErrorsAlert,
+    createPermissionDeniedErrorsAlert,
+    deletePermissionDeniedErrorsAlert,
     setLoading,
     cancelLoading,
     connect,
@@ -201,9 +236,12 @@ export const {
     setResourcesHashes,
     setCreatedResource,
     setDeletedResource,
+    setUpdatedResource,
+    setBlacklistUsers,
     setCreatedUser,
     setDeletedUser,
-    setUpdatedUser
+    setUpdatedUser,
+    setCurrentUserInView
 } = accessControlListSlice.actions;
 
 export default accessControlListSlice.reducer;
