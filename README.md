@@ -84,7 +84,8 @@ These three tools were game changer for these reasons:
   - Gas cost
   - Input params
   - Output params
-    And then this could be debugged through breakpoints or step by step seeing what the function is doing and how it is changing the current state.
+
+And then this could be debugged through breakpoints or step by step seeing what the function is doing and how it is changing the current state.
 
 ## Run the project <a name="run_the_project"></a>
 
