@@ -25,7 +25,6 @@ export const listenForCustomErrors = () => {
   if (contract) {
     contract.events.CustomError()
       .on('data', (event: any) => {
-        debugger
         useCustomErrorsAlert(JSON.stringify(event.returnValues.message), 'red');
       });
   }
@@ -36,7 +35,6 @@ export const listenForPermissionError = () => {
     if (contract) {
       contract.events.PermissionDenied()
         .on('data', (event: any) => {
-          debugger;
           usePermissionDeniedErrorsAlert(JSON.stringify(event.returnValues.message), 'red');
         })
     }
