@@ -87,6 +87,51 @@ These three tools were game changer for these reasons:
 
 And then this could be debugged through breakpoints or step by step seeing what the function is doing and how it is changing the current state.
 
+## Deploy
+
+To deploy the solidity part into a testnet it has been created a truffle-config.json which contains all the rules and informations to deploy correctly.
+The file is required when launching the command: `truffle migrate --network development`, which will trigger truffle to create the build files using the development data.
+One important part in this file is:
+
+```
+  networks: {
+    development: {
+      host: "127.0.0.1",     // Localhost (default: none)
+      port: 7545,            // Standard Ethereum port (default: none)
+      network_id: 5777,      // Any network (default: none)
+      gas: 30000000,
+    },
+  }
+```
+
+This inform the command line to create a newtowrk on `127.0.0.1` (localhost) on port: `7545` and identify the network iwht id `5777`, with a maximum gas cost of `30000000`.
+This last number is particularly important for developers because it highlights the maximum cost to deploy the smart contracts, this cost is real money the developer has to spend.
+A little below there's another important part:
+```
+  compilers: {
+    solc: {
+      version: "0.8.17",   // Fetch exact version from solc-bin (default: truffle's version)(default: false)
+      settings: {          // See the solidity docs for advice about optimization and evmVersion
+        optimizer: {
+          enabled: true,
+          runs: 1000
+        },
+        evmVersion: "london"
+      }
+    }
+  }
+```
+
+This is instructing truffle to use solidity version 0.8.17, to run with an optimizer and use ethereum virtual machine version london on verification process.
+Last important file is 1_initial_migrations.js which requires the name of the contract to be deployed, in this case **AccessControlList**.
+```
+const AccessControlList = artifacts.require('AccessControlList');
+
+module.exports = async (deployer) => {
+  await deployer.deploy(AccessControlList);
+};
+```
+
 ## Run the project <a name="run_the_project"></a>
 
 Prerequisites:
@@ -150,9 +195,9 @@ The string should now the of length 32 bytes, while the public key (which is not
 
 7. Open the users view by clicking no the left menu item called 'Users' and then on 'Create users'
 
-    3.1. The user have to click on the toggle to insert his own public key in PEM format pasting it into the textarea.
+    7.1. The user have to click on the toggle to insert his own public key in PEM format pasting it into the textarea.
 
-    3.2. Click on create button to create the user, a small green alert should be visible in the lower part of the screen
+    7.2. Click on create button to create the user, a small green alert should be visible in the lower part of the screen
 
 To have the same result but leaving the key pair generation to the dApp the use ehas to follow these steps:
 
@@ -164,6 +209,40 @@ To have the same result but leaving the key pair generation to the dApp the use 
 6. In the meanwhile the dApp has created and store locally the public key to generate the EBSI DID to send it to Solidity smart contract. Clicking on the Create button on the lower part of the dialog should create the user leaving a small green alert in the page.
 
 Now the user should have his own account and is free to play with the project, creating new custom roles or permissions and creating resource to be assigned or to blacklist other users from accessing the resources where he is admin.
+NOTE: for some parts of this process (creating a user) requires some ETH because the smart contract is going to write on blockchain so to reward the chain it needs some gas. If the user doesn't have enough ETH on his address it won't create the user reverting every change and alerting the user.
+
+## Solidity code choices
+
+In some solidity functions the project has been refactored to optimize the code, at first try the code was looping too much to delete or to write in variables and this was increasing too much the gas consumption causing most of the time a revert or an internal error meaning the code is an anti-pattern.
+In example removeUser was called removeUsers and was meant to delete an array of users looping through the passed array from client-side, but this has been changed to a function which changes only a user per time, this has downsides like running the same multiple time to emulate the deletion fo multiple users in one time, this also creates more request to Metamask that needs to accept multiple times to complete the actions.
+
+Some other functions were looping through the created items array before the refactor has been optimized with the check into a mapping, differently from a for loop, this has less gas consumption in runtime and does not require to go through the entire array length.
+
+Functions like `updateResourceBlackList` and `updateUserResources` were before divided into a function adding items, one removing items and another one to edit the resource or user, these were adding gas consumption during deploy and not adding any relevant improvement, so those have been refactored into a single function which based on a param choose what to do.
+
+In general Solidity forces the developer to optimize the code to spend the least amount of gas to deploy and run the transactions, but this means learning new mechanics to not reach the max with anti-patterns that in some other languages may be normal patterns even thougth they could be not efficient but trascurable.
+
+For more info regarding functions and what they do there is an interface file with all the virtual functions which can be found [here](https://github.com/pucco93/ebsi-access-control/blob/main/ebsi-access-control/contracts/IAccessControlList.sol).
+
+## Main features
+
+The project adpots a role-based model where a user has a single role per each resource. 
+A role is made of a name, a list of permissions and a true/false value that indicates if the role is custom or not.
+The user can create custom roles and assign them to other users in the resources he creates. A role can have more than one single permission and these are used in many solidity functions that check if the user doing the action has enough permission to do it.
+Furthermore resources have the possibility to add/remove users to/from a blacklist, this action has the goal to limit which user can access a resource.
+
+The dApp is made of 4 views: Users, Resources, Roles and Permissions. Every view is composed by a search bar and a create button on top and a table on the lower part.
+The table display the data from every item in list, and has actions on the right side to remove or edit the row. Each item has different editing options based on item type.
+
+- Users view has the button to create new users, this opens a dialog with required data and options to create the user.
+The table displays the ebsi did, a list of resources some data regarding creation date and last access/update.
+In the users table the actions can remove a user or open a dialog to edit it, this last dialog gives the ability to add or remove resources from a user and change resources and roles to him.
+
+- Resources view has a button to create a resource which requires only a name, the table displaying the name the users in blacklist and the actions. The actions available are delete and edit. Editing a resource means adding or removing users from its blacklist.
+
+- Roles view shows the table with all the created roles, with each rows rendering the role name, a checkmark or cross icon to let the user know if it is custom or not and actions to delete the role. This action is only available if the role is custom.
+
+- Permissions view shows a table containing created permissions, a button to create new custom permissions. The available action is only the delete permission which is available only if the permission is custom.
 
 ## Known issues <a name="known_issues"></a>
 
@@ -173,6 +252,8 @@ Sadly this problem raise because the project had to rely on ETH blockchain and t
 ## Possible future implementations <a name="future_implementations"></a>
 
 After having worked many hours with this tech stack some things which would be definitely replaced are Web3.js and Truffle with Ether.js and Hardhat. This changes are meant to increase the possbilities that these tools have in comparison to what Truffle and Web3.js can do now. On a developer side they seems to be easier to adopt and to maintain.
+
+The possibility to create custom role and custom permissions imply that in future could be possible to create functions which require a certain permission to be done.
 
 ## Useful links <a name="useful_links"></a>
 
