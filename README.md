@@ -99,7 +99,7 @@ Prerequisites:
 
 The following steps will help creating the right environment to run the project.
 
-- Firstly the user have to clone the repo from github.
+- Firstly the user has to clone the repo from github.
 - Open a terminal and install all the dependencies by running `npm install` in the root folder (where package.json is located).
 - Run the client side application with `npm run dev` (from the location package.json is).
 At this point the application should run on the browser in localhost and it should be configured to get data from smart contract, but first the user should create the testnet.
